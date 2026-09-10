@@ -1,0 +1,10 @@
+{
+	"node": "n8n-nodes-brault.brault",
+	"nodeVersion": "1.0",
+	"codexVersion": "1.0",
+	"categories": ["Productivity", "Marketing"],
+	"resources": {
+		"credentialDocumentation": [{ "url": "https://developers.brault.app/docs/get-an-api-key" }],
+		"primaryDocumentation": [{ "url": "https://developers.brault.app/docs/guides/connect-n8n" }]
+	}
+}
