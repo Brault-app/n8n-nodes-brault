@@ -14,6 +14,7 @@ import { reply } from '../actions/reply';
 import { role } from '../actions/role';
 import { search } from '../actions/search';
 import { sharedLink } from '../actions/shared-link';
+import { transfer } from '../actions/transfer';
 import type { OperationSpec, ResourceSpec } from './types';
 
 export const RESOURCES: ResourceSpec[] = [
@@ -29,6 +30,7 @@ export const RESOURCES: ResourceSpec[] = [
 	property,
 	page,
 	sharedLink,
+	transfer,
 	bulkDownload,
 	brandspace,
 	member,
