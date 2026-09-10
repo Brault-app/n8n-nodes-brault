@@ -4,18 +4,13 @@
  * properties and always emits a `default` there.
  */
 /* eslint-disable n8n-nodes-base/node-param-default-missing */
-import { NodeOperationError } from 'n8n-workflow';
 import { bodyParam, folderLocator, libraryLocator, pathLocator, queryParam } from '../catalogue/common-params';
-import type { CustomHandler, ResourceSpec } from '../catalogue/types';
+import type { ResourceSpec } from '../catalogue/types';
 import { downloadFile, uploadFile } from './file-binary';
 import { importFromUrl } from './file-import-wait';
+import { setFilePropertyValue, valueParams } from './property-value';
 
 const FILE_KINDS = ['image', 'video', 'audio', 'document', 'link', 'other'];
-
-/** Task 12 wires the real handler; this stub keeps the operation visible in the meantime. */
-const setFilePropertyValue: CustomHandler = (ctx) => {
-	throw new NodeOperationError(ctx.getNode(), 'Set Property Value arrives in a later task');
-};
 
 export const file: ResourceSpec = {
 	value: 'file',
@@ -243,7 +238,7 @@ export const file: ResourceSpec = {
 			method: 'PUT',
 			plane: 'regional',
 			path: '/v1/files/{fileId}/properties/{propertyId}',
-			params: [pathLocator('fileId', 'File', 'file'), pathLocator('propertyId', 'Property', 'property')],
+			params: [pathLocator('fileId', 'File', 'file'), pathLocator('propertyId', 'Property', 'property'), ...valueParams],
 			custom: setFilePropertyValue,
 		},
 		{
