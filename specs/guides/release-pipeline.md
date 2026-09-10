@@ -11,9 +11,10 @@ Every push to `main` must pass, locally, in this exact order, before the push ha
 2. `npm run build` — runs `n8n-node build`, compiles `credentials/` and `nodes/` into
    `dist/`.
 3. `npm test` — runs `jest` against `test/**/*.spec.ts`.
-4. `npm run scan` — packs the current tree with `npm pack`, runs
-   `@n8n/scan-community-package` against the resulting tarball (n8n's community-node
-   verification check), then removes the tarball.
+4. `npm run scan` — post-release only. `@n8n/scan-community-package` resolves the
+   published package by name (`n8n-nodes-brault`) and has no local-tarball mode, so it is
+   run by `publish.yml` after `npm run release`, and manually after any release. A
+   failure means: fix, then release a patch version.
 
 A failing step blocks the push. Fix it locally and re-run the full gate on the new
 state — do not push and let CI report what a two-minute local run would have caught.
@@ -21,7 +22,7 @@ state — do not push and let CI report what a two-minute local run would have c
 ## CI
 
 `.github/workflows/ci.yml` runs on every pull request and on every push to `main`:
-`npm ci` → `npm run lint` → `npm run build` → `npm test` → `npm run scan`, on
+`npm ci` → `npm run lint` → `npm run build` → `npm test`, on
 `ubuntu-latest` with `node-version: lts/*`. This is a mirror of the pre-push gate, not
 a superset — if CI ever grows a step the gate above must grow with it.
 

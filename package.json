@@ -15,7 +15,7 @@
     "lint": "n8n-node lint",
     "lint:fix": "n8n-node lint --fix",
     "test": "jest",
-    "scan": "npm pack --silent && npx @n8n/scan-community-package ./n8n-nodes-brault-*.tgz; rm -f n8n-nodes-brault-*.tgz",
+    "scan": "npx @n8n/scan-community-package n8n-nodes-brault",
     "release": "n8n-node release",
     "prepublishOnly": "n8n-node prerelease"
   },

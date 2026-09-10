@@ -97,3 +97,9 @@ jobs:
           npm run release
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Scan the published package
+        # @n8n/scan-community-package only resolves published packages by name (no
+        # local-tarball mode), so n8n's community-node verification runs after publish.
+        # A failure here does not unpublish; fix and release a patch.
+        run: npm run scan

@@ -51,9 +51,9 @@ push, never push and let CI tell you:
    the no-fix variant.
 2. `npm run build` (`n8n-node build`).
 3. `npm test` (`jest`).
-4. `npm run scan` (`npm pack` + `@n8n/scan-community-package` against the built
-   tarball) — this is the same community-package verification n8n runs before listing
-   the package; a failure here blocks publishing regardless of what npm allows.
+4. After a release only: `npm run scan` (`@n8n/scan-community-package n8n-nodes-brault`).
+   The scanner resolves published packages by name and has no local-tarball mode, so it
+   cannot run before the first publish; `publish.yml` runs it right after `npm run release`.
 
 ## Manual smoke procedure
 
