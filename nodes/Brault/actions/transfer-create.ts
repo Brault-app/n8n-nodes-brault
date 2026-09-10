@@ -31,7 +31,7 @@ export async function createTransfer(ctx: IExecuteFunctions, i: number, spec: Op
 	const draft = await braultRequest<
 		IDataObject & {
 			id: string;
-			uploads?: Array<{ id: string; name: string; method: 'put' | 'multipart'; url?: string | null; part_size?: number | null }>;
+			uploads?: Array<{ id: string; name: string; method: 'put' | 'multipart'; url?: string | null; part_size?: number | null; content_type?: string | null }>;
 		}
 	>(ctx, { plane: 'regional', method: 'POST', path: '/v1/transfers', body, idempotent: true });
 
@@ -41,7 +41,7 @@ export async function createTransfer(ctx: IExecuteFunctions, i: number, spec: Op
 		if (!u) break;
 		await uploadWithSession(
 			ctx,
-			{ id: u.id, method: u.method, url: u.url, part_size: u.part_size },
+			{ id: u.id, method: u.method, url: u.url, part_size: u.part_size, content_type: u.content_type },
 			sources[k].source,
 			{ parts: `/v1/transfers/${draft.id}/uploads/${u.id}/parts`, complete: `/v1/transfers/${draft.id}/uploads/${u.id}/complete` },
 			{ size: sources[k].size, mimeType: sources[k].mimeType },
