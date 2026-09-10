@@ -4,6 +4,7 @@ import { runOperation } from './actions/run-operation';
 import { findOperation, RESOURCES } from './catalogue';
 import { buildProperties } from './catalogue/build-properties';
 import { listSearch } from './methods/list-search';
+import { loadOptions } from './methods/load-options';
 
 export class Brault implements INodeType {
 	description: INodeTypeDescription = {
@@ -23,7 +24,7 @@ export class Brault implements INodeType {
 		properties: buildProperties(RESOURCES),
 	};
 
-	methods = { listSearch };
+	methods = { listSearch, loadOptions };
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		const items = this.getInputData();
