@@ -57,4 +57,54 @@ describe('braultRequest', () => {
 			description: expect.stringContaining('req_9'),
 		});
 	});
+
+	it('does not retry a 429 whose Retry-After exceeds the 10s cap', async () => {
+		const c = ctx([
+			me,
+			{ statusCode: 429, headers: { 'retry-after': '30' }, body: { error: { code: 'rate_limited', message: 'slow down', status: 429 } } },
+		]);
+		await expect(braultRequest(c, { plane: 'regional', method: 'GET', path: '/v1/files' })).rejects.toMatchObject({
+			httpCode: '429',
+			description: expect.stringContaining('Retry-After 30s'),
+		});
+		// one call to resolve hosts + one request call: no retry was attempted
+		expect((c as never as { calls: Call[] }).calls.length).toBe(2);
+	});
+
+	it('does not retry a 429 whose Retry-After is not a finite number', async () => {
+		const c = ctx([
+			me,
+			{
+				statusCode: 429,
+				headers: { 'retry-after': 'Wed, 21 Oct 2026 07:28:00 GMT' },
+				body: { error: { code: 'rate_limited', message: 'slow down', status: 429 } },
+			},
+		]);
+		await expect(braultRequest(c, { plane: 'regional', method: 'GET', path: '/v1/files' })).rejects.toMatchObject({ httpCode: '429' });
+		expect((c as never as { calls: Call[] }).calls.length).toBe(2);
+	});
+
+	it('does not retry a 429 with no Retry-After header at all', async () => {
+		const c = ctx([me, { statusCode: 429, body: { error: { code: 'rate_limited', message: 'slow down', status: 429 } } }]);
+		await expect(braultRequest(c, { plane: 'regional', method: 'GET', path: '/v1/files' })).rejects.toMatchObject({ httpCode: '429' });
+		expect((c as never as { calls: Call[] }).calls.length).toBe(2);
+	});
+
+	it('retries exactly once even if the retry itself comes back 429', async () => {
+		const rateLimited = { statusCode: 429, headers: { 'retry-after': '0' }, body: { error: { code: 'rate_limited', message: 'slow down', status: 429 } } };
+		const c = ctx([me, rateLimited, rateLimited]);
+		await expect(braultRequest(c, { plane: 'regional', method: 'GET', path: '/v1/files' })).rejects.toMatchObject({ httpCode: '429' });
+		// one call to resolve hosts + exactly two request calls (the original attempt and one retry)
+		expect((c as never as { calls: Call[] }).calls.length).toBe(3);
+	});
+
+	it('resolves an empty object for a 204 with an empty string body', async () => {
+		const c = ctx([me, { statusCode: 204, body: '' }]);
+		await expect(braultRequest(c, { plane: 'regional', method: 'DELETE', path: '/v1/files/1' })).resolves.toEqual({});
+	});
+
+	it('resolves an empty object for a 200 with an empty string body', async () => {
+		const c = ctx([me, { statusCode: 200, body: '' }]);
+		await expect(braultRequest(c, { plane: 'regional', method: 'GET', path: '/v1/files/1' })).resolves.toEqual({});
+	});
 });

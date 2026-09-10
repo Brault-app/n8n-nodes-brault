@@ -1,4 +1,4 @@
-import { parseErrorBody, friendlyMessage } from '../../nodes/Brault/transport/errors';
+import { parseErrorBody, friendlyMessage, toNodeApiError } from '../../nodes/Brault/transport/errors';
 
 describe('parseErrorBody', () => {
 	it('reads the v1 error envelope', () => {
@@ -21,6 +21,10 @@ describe('parseErrorBody', () => {
 	it('handles a non-JSON body', () => {
 		expect(parseErrorBody('<html>', 502)).toMatchObject({ code: 'http_502', status: 502 });
 	});
+
+	it('handles an undefined body', () => {
+		expect(parseErrorBody(undefined, 500)).toMatchObject({ code: 'http_500', status: 500 });
+	});
 });
 
 describe('friendlyMessage', () => {
@@ -40,5 +44,28 @@ describe('friendlyMessage', () => {
 		expect(
 			friendlyMessage({ code: 'misdirected_request', message: 'x', status: 421, details: { host: 'https://eu.api.brault.app' } }),
 		).toContain('eu.api.brault.app');
+	});
+});
+
+describe('toNodeApiError', () => {
+	const node = { name: 'Brault', type: 'n8n-nodes-brault.brault', typeVersion: 1, position: [0, 0], parameters: {} } as never;
+
+	it('appends the s suffix to a numeric Retry-After value', () => {
+		const err = toNodeApiError(node, {
+			statusCode: 429,
+			headers: { 'retry-after': '30' },
+			body: { error: { code: 'rate_limited', message: 'slow down', status: 429 } },
+		});
+		expect(err.description).toContain('Retry-After 30s');
+	});
+
+	it('keeps a non-numeric Retry-After value raw, without an s suffix', () => {
+		const err = toNodeApiError(node, {
+			statusCode: 429,
+			headers: { 'retry-after': 'Wed, 21 Oct 2026 07:28:00 GMT' },
+			body: { error: { code: 'rate_limited', message: 'slow down', status: 429 } },
+		});
+		expect(err.description).toContain('Retry-After Wed, 21 Oct 2026 07:28:00 GMT');
+		expect(err.description).not.toContain('GMTs');
 	});
 });

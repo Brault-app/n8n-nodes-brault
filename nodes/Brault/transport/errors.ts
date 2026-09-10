@@ -52,10 +52,15 @@ export function friendlyMessage(info: BraultApiErrorInfo): string {
 
 export function toNodeApiError(node: INode, res: BraultResponse): NodeApiError {
 	const info = parseErrorBody(res.body, res.statusCode);
+	const retryAfterRaw = res.headers['retry-after'];
+	const retryAfterText =
+		retryAfterRaw !== undefined
+			? `${String(retryAfterRaw)}${Number.isFinite(Number(retryAfterRaw)) ? 's' : ''}`
+			: undefined;
 	const description = [
 		info.code,
 		info.requestId ? `request_id ${info.requestId}` : undefined,
-		res.statusCode === 429 && res.headers['retry-after'] !== undefined ? `Retry-After ${String(res.headers['retry-after'])}s` : undefined,
+		res.statusCode === 429 && retryAfterText !== undefined ? `Retry-After ${retryAfterText}` : undefined,
 	]
 		.filter(Boolean)
 		.join(' · ');

@@ -67,11 +67,18 @@ export function isListEnvelope(body: unknown): body is ListEnvelope {
 	return !!body && typeof body === 'object' && (body as IDataObject).object === 'list' && Array.isArray((body as IDataObject).data);
 }
 
+function isEmptyBody(body: unknown): boolean {
+	if (body === null || body === undefined) return true;
+	if (typeof body === 'string' && body.trim() === '') return true;
+	return false;
+}
+
 export async function braultRequest<T = IDataObject>(ctx: TransportContext, opts: BraultRequestOptions): Promise<T> {
 	const res = await braultRequestRaw(ctx, opts);
 	if (res.statusCode < 200 || res.statusCode >= 300) throw toNodeApiError(ctx.getNode(), res);
-	const body = res.body as IDataObject | undefined;
+	const body = res.body as unknown;
+	if (isEmptyBody(body)) return {} as T;
 	if (isListEnvelope(body)) return body as unknown as T;
-	if (body && typeof body === 'object' && 'data' in body) return body.data as T;
-	return (body ?? {}) as T;
+	if (body && typeof body === 'object' && 'data' in (body as IDataObject)) return (body as IDataObject).data as T;
+	return body as T;
 }
