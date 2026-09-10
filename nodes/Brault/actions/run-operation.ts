@@ -3,7 +3,7 @@ import { NodeOperationError } from 'n8n-workflow';
 import { planRequest, type RequestPlan } from '../catalogue/plan-request';
 import type { OperationSpec } from '../catalogue/types';
 import { getAll } from '../transport/pagination';
-import { braultRequest } from '../transport/request';
+import { braultRequest, isListEnvelope } from '../transport/request';
 
 export function readValues(ctx: IExecuteFunctions, i: number, spec: OperationSpec): Record<string, unknown> {
 	const values: Record<string, unknown> = {};
@@ -18,18 +18,10 @@ export function readValues(ctx: IExecuteFunctions, i: number, spec: OperationSpe
 /**
  * Single-page list envelopes (for example GET /v1/files/{id}/boards) answer without
  * pagination params, so unwrap them here instead of declaring the operation as a list.
+ * Reuses the transport layer's own envelope check instead of duplicating it.
  */
-function isSinglePageEnvelope(data: unknown): data is { object: 'list'; data: unknown[] } {
-	return (
-		!!data &&
-		typeof data === 'object' &&
-		(data as IDataObject).object === 'list' &&
-		Array.isArray((data as IDataObject).data)
-	);
-}
-
 export function toItems(data: unknown, i: number): INodeExecutionData[] {
-	const rows = Array.isArray(data) ? data : isSinglePageEnvelope(data) ? data.data : [data];
+	const rows = Array.isArray(data) ? data : isListEnvelope(data) ? data.data : [data];
 	return rows.map((json) => ({ json: (json ?? {}) as IDataObject, pairedItem: { item: i } }));
 }
 

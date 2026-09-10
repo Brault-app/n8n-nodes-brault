@@ -54,25 +54,23 @@ export function paramToProperty(p: ParamSpec, op: OperationSpec): INodePropertie
 }
 
 export function buildProperties(resources: ResourceSpec[]): INodeProperties[] {
-	const out: INodeProperties[] = [
-		// eslint-disable-next-line n8n-nodes-base/node-param-default-missing -- the default is computed
-		{
-			displayName: 'Resource',
-			name: 'resource',
-			type: 'options',
-			noDataExpression: true,
-			default: resources[0]?.value ?? '',
-			options: resources.map((r) => ({ name: r.name, value: r.value, description: r.description })),
-		},
-	];
+	const resourceProp: INodeProperties = {
+		displayName: 'Resource',
+		name: 'resource',
+		type: 'options',
+		noDataExpression: true,
+		default: '',
+		options: resources.map((r) => ({ name: r.name, value: r.value, description: r.description })),
+	};
+	resourceProp.default = resources[0]?.value ?? '';
+	const out: INodeProperties[] = [resourceProp];
 	for (const r of resources) {
-		// eslint-disable-next-line n8n-nodes-base/node-param-default-missing -- the default is computed
-		out.push({
+		const operationProp: INodeProperties = {
 			displayName: 'Operation',
 			name: 'operation',
 			type: 'options',
 			noDataExpression: true,
-			default: r.operations[0]?.operation ?? '',
+			default: '',
 			displayOptions: { show: { resource: [r.value] } },
 			options: r.operations.map((o) => ({
 				name: o.name,
@@ -80,7 +78,9 @@ export function buildProperties(resources: ResourceSpec[]): INodeProperties[] {
 				action: o.action,
 				description: o.description,
 			})),
-		});
+		};
+		operationProp.default = r.operations[0]?.operation ?? '';
+		out.push(operationProp);
 		for (const op of r.operations) {
 			for (const p of op.params ?? []) out.push(paramToProperty(p, op));
 			if (op.list) {

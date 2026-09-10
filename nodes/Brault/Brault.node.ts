@@ -1,5 +1,5 @@
 import type { IExecuteFunctions, INodeExecutionData, INodeType, INodeTypeDescription } from 'n8n-workflow';
-import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
+import { NodeApiError, NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 import { runOperation } from './actions/run-operation';
 import { findOperation, RESOURCES } from './catalogue';
 import { buildProperties } from './catalogue/build-properties';
@@ -37,15 +37,26 @@ export class Brault implements INodeType {
 				throw new NodeOperationError(this.getNode(), `Unknown operation ${resource}.${operation}`, {
 					itemIndex: i,
 				});
-			let failure: Error | undefined;
+			// An explicit flag (rather than `if (failure)`) so a falsy thrown value
+			// (`throw undefined`, `throw null`, `throw ''`) still registers as a failure
+			// instead of being silently swallowed and dropping the item.
+			let failed = false;
+			let failure: Error = new Error();
 			try {
 				out.push(...(await runOperation(this, i, spec)));
 			} catch (error) {
-				failure = error as Error;
+				failed = true;
+				// Normalise non-Error throws to a real Error, but keep Error instances
+				// (including NodeApiError / NodeOperationError) intact so their original
+				// shape reaches the user unwrapped.
+				failure = error instanceof Error ? error : new Error(String(error));
+				if (failure instanceof NodeApiError && failure.context.itemIndex === undefined) {
+					failure.context.itemIndex = i;
+				}
 			}
 			// The rethrow lives outside the catch block so the original NodeApiError or
 			// NodeOperationError raised by the transport reaches the user unwrapped.
-			if (failure) {
+			if (failed) {
 				if (!this.continueOnFail()) throw failure;
 				out.push({ json: { error: failure.message }, pairedItem: { item: i } });
 			}

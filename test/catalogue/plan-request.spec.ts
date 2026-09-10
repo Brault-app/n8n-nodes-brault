@@ -12,7 +12,7 @@ const spec: OperationSpec = {
 	path: '/v1/files/{fileId}/move',
 	params: [{ name: 'fileId', displayName: 'File', in: 'path', type: 'string', required: true, locator: 'file' }],
 	fields: [
-		{ name: 'folder_id', displayName: 'Folder ID', in: 'body', type: 'string' },
+		{ name: 'folder_id', displayName: 'Folder ID', in: 'body', type: 'string', locator: 'folder' },
 		{ name: 'to_root', displayName: 'To Root', in: 'body', type: 'boolean' },
 		{ name: 'tags', displayName: 'Tags', in: 'body', type: 'string', csv: true },
 		{ name: 'recursive', displayName: 'Recursive', in: 'query', type: 'boolean' },
@@ -45,5 +45,22 @@ describe('planRequest', () => {
 	});
 	it('throws on a missing required path param', () => {
 		expect(() => planRequest(spec, {})).toThrow(/File/);
+	});
+	it('extracts .value from a resourceLocator object for a locator field', () => {
+		const plan = planRequest(spec, { fileId: 'f1', folder_id: { mode: 'list', value: 'fo_1' } });
+		expect(plan.body).toEqual({ folder_id: 'fo_1' });
+	});
+	it('passes a plain string through unchanged for a locator field', () => {
+		const plan = planRequest(spec, { fileId: 'f1', folder_id: 'fo_2' });
+		expect(plan.body).toEqual({ folder_id: 'fo_2' });
+	});
+	it('throws a readable message when a number field is not numeric', () => {
+		const numberSpec: OperationSpec = {
+			...spec,
+			fields: [{ name: 'width', displayName: 'Width', in: 'body', type: 'number' }],
+		};
+		expect(() => planRequest(numberSpec, { fileId: 'f1', width: 'not-a-number' })).toThrow(
+			'Width must be a number',
+		);
 	});
 });
