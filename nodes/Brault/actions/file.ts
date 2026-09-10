@@ -1,0 +1,281 @@
+/*
+ * Catalogue data, not n8n INodeProperties: these ParamSpec objects only share the
+ * displayName/name/type shape. catalogue/build-properties.ts turns them into real node
+ * properties and always emits a `default` there.
+ */
+/* eslint-disable n8n-nodes-base/node-param-default-missing */
+import { NodeOperationError } from 'n8n-workflow';
+import { bodyParam, folderLocator, libraryLocator, pathLocator, queryParam } from '../catalogue/common-params';
+import type { CustomHandler, ResourceSpec } from '../catalogue/types';
+import { importFromUrl } from './file-import-wait';
+
+const FILE_KINDS = ['image', 'video', 'audio', 'document', 'link', 'other'];
+
+/** Task 12 wires the real handler; this stub keeps the operation visible in the meantime. */
+const setFilePropertyValue: CustomHandler = (ctx) => {
+	throw new NodeOperationError(ctx.getNode(), 'Set Property Value arrives in a later task');
+};
+
+export const file: ResourceSpec = {
+	value: 'file',
+	name: 'File',
+	description: 'Files stored inside a library, board, or shared link',
+	operations: [
+		{
+			resource: 'file',
+			operation: 'getAll',
+			name: 'Get Many',
+			action: 'Get many files',
+			description: 'List and filter files across a library or folder',
+			method: 'GET',
+			plane: 'regional',
+			path: '/v1/files',
+			list: true,
+			fields: [
+				{ ...libraryLocator(), in: 'query' },
+				{ ...folderLocator(), in: 'query' },
+				queryParam('recursive', 'Recursive', 'boolean', {
+					description: 'Whether to include files nested under the folder',
+				}),
+				queryParam('q', 'Search Text', 'string', { description: 'Free-text search over the file name' }),
+				queryParam('extensions', 'Extensions', 'string', {
+					csv: true,
+					description: 'Comma-separated list of file extensions to include, for example psd, ai',
+				}),
+				queryParam('kind', 'Kind', 'multiOptions', {
+					description: 'Restrict results to one or more file kinds',
+					options: FILE_KINDS.map((k) => ({ name: k[0].toUpperCase() + k.slice(1), value: k })),
+				}),
+				queryParam('created_after', 'Created After', 'dateTime', {
+					description: 'Only include files created on or after this date',
+				}),
+				queryParam('created_before', 'Created Before', 'dateTime', {
+					description: 'Only include files created on or before this date',
+				}),
+				queryParam('uploaded_by', 'Uploaded By User IDs', 'string', {
+					csv: true,
+					description: 'Comma-separated list of user IDs who uploaded the file',
+				}),
+				queryParam('min_size', 'Min Size', 'number', { description: 'Minimum file size in bytes' }),
+				queryParam('max_size', 'Max Size', 'number', { description: 'Maximum file size in bytes' }),
+				queryParam('filter', 'Filter', 'string', {
+					description: 'Advanced filter expression, see developers.brault.app/docs/reference/files',
+				}),
+				queryParam('sort', 'Sort', 'options', {
+					default: 'name',
+					description: 'Field to sort results by',
+					options: [
+						{ name: 'Name', value: 'name' },
+						{ name: 'Size', value: 'size' },
+						{ name: 'Created At', value: 'created_at' },
+					],
+				}),
+				queryParam('order', 'Order', 'options', {
+					default: 'asc',
+					description: 'Sort direction',
+					options: [
+						{ name: 'Ascending', value: 'asc' },
+						{ name: 'Descending', value: 'desc' },
+					],
+				}),
+			],
+		},
+		{
+			resource: 'file',
+			operation: 'get',
+			name: 'Get',
+			action: 'Get a file',
+			description: 'Retrieve one file by ID',
+			method: 'GET',
+			plane: 'regional',
+			path: '/v1/files/{fileId}',
+			params: [pathLocator('fileId', 'File', 'file')],
+		},
+		{
+			resource: 'file',
+			operation: 'update',
+			name: 'Update',
+			action: 'Update a file',
+			description: 'Rename a file, replace its tags, or change a link file target',
+			method: 'PATCH',
+			plane: 'regional',
+			path: '/v1/files/{fileId}',
+			params: [pathLocator('fileId', 'File', 'file')],
+			fields: [
+				bodyParam('name', 'Name', 'string'),
+				bodyParam('tags', 'Tags', 'string', { csv: true, description: 'Comma-separated list of tags; replaces all existing tags' }),
+				bodyParam('external_url', 'External URL', 'string', { description: 'Target URL of a link file' }),
+			],
+		},
+		{
+			resource: 'file',
+			operation: 'move',
+			name: 'Move',
+			action: 'Move a file',
+			description: 'Move a file to another library or folder',
+			method: 'POST',
+			plane: 'regional',
+			path: '/v1/files/{fileId}/move',
+			params: [pathLocator('fileId', 'File', 'file')],
+			fields: [libraryLocator(), folderLocator(), bodyParam('to_root', 'To Root', 'boolean', { description: 'Move to the brandspace root ("All Files")' })],
+		},
+		{
+			resource: 'file',
+			operation: 'copy',
+			name: 'Copy',
+			action: 'Copy a file',
+			description: 'Copy a file into another library or folder',
+			method: 'POST',
+			plane: 'regional',
+			path: '/v1/files/{fileId}/copy',
+			params: [pathLocator('fileId', 'File', 'file')],
+			fields: [libraryLocator(), folderLocator(), bodyParam('to_root', 'To Root', 'boolean', { description: 'Copy to the brandspace root ("All Files")' })],
+		},
+		{
+			resource: 'file',
+			operation: 'delete',
+			name: 'Delete',
+			action: 'Delete a file',
+			description: 'Move a file to the trash, or delete it permanently',
+			method: 'DELETE',
+			plane: 'regional',
+			path: '/v1/files/{fileId}',
+			params: [pathLocator('fileId', 'File', 'file')],
+			fields: [queryParam('permanent', 'Permanent', 'boolean', { description: 'Delete permanently instead of moving to trash' })],
+		},
+		{
+			resource: 'file',
+			operation: 'restore',
+			name: 'Restore',
+			action: 'Restore a file',
+			description: 'Restore a file that was moved to the trash',
+			method: 'POST',
+			plane: 'regional',
+			path: '/v1/files/{fileId}/restore',
+			params: [pathLocator('fileId', 'File', 'file')],
+		},
+		{
+			resource: 'file',
+			operation: 'getDownloadUrl',
+			name: 'Get Download URL',
+			action: 'Get a download link for a file',
+			description: 'Generate a signed URL to download the file or one of its renditions',
+			method: 'GET',
+			plane: 'regional',
+			path: '/v1/files/{fileId}/download',
+			params: [pathLocator('fileId', 'File', 'file')],
+			fields: [
+				queryParam('rendition', 'Rendition', 'options', {
+					default: 'original',
+					description: 'Which rendition of the file to download',
+					options: [
+						{ name: 'Original', value: 'original' },
+						{ name: 'Preview', value: 'preview' },
+						{ name: 'Thumbnail', value: 'thumbnail' },
+					],
+				}),
+			],
+		},
+		{
+			resource: 'file',
+			operation: 'getSimilar',
+			name: 'Get Similar',
+			action: 'Get files similar to a file',
+			description: 'List files that are visually similar to the given file',
+			method: 'GET',
+			plane: 'regional',
+			path: '/v1/files/{fileId}/similar',
+			list: true,
+			params: [pathLocator('fileId', 'File', 'file')],
+		},
+		{
+			resource: 'file',
+			operation: 'getBoards',
+			name: 'Get Boards',
+			action: 'Get the boards a file belongs to',
+			description: 'List every board that includes the given file',
+			method: 'GET',
+			plane: 'regional',
+			path: '/v1/files/{fileId}/boards',
+			list: false,
+			params: [pathLocator('fileId', 'File', 'file')],
+		},
+		{
+			resource: 'file',
+			operation: 'setProperty',
+			name: 'Set Property Value',
+			action: 'Set a brandspace property value on a file',
+			description: 'Set the value of a brandspace property on a file',
+			method: 'PUT',
+			plane: 'regional',
+			path: '/v1/files/{fileId}/properties/{propertyId}',
+			params: [pathLocator('fileId', 'File', 'file'), pathLocator('propertyId', 'Property', 'property')],
+			custom: setFilePropertyValue,
+		},
+		{
+			resource: 'file',
+			operation: 'importFromUrl',
+			name: 'Import From URL',
+			action: 'Import a file from a link',
+			description: 'Start importing a file from a public URL into a library or folder',
+			method: 'POST',
+			plane: 'regional',
+			path: '/v1/files/import',
+			params: [bodyParam('url', 'URL', 'string', { required: true, placeholder: 'e.g. https://example.com/hero.psd' })],
+			fields: [
+				bodyParam('name', 'Name', 'string', { description: 'Name for the imported file; defaults to the source filename' }),
+				libraryLocator(),
+				folderLocator(),
+				{
+					displayName: 'Wait For Completion',
+					name: 'wait',
+					in: 'body',
+					type: 'boolean',
+					default: false,
+					description: 'Whether to wait until the import finishes and return the created file',
+				},
+			],
+			custom: importFromUrl,
+		},
+		{
+			resource: 'file',
+			operation: 'getVersions',
+			name: 'Get Versions',
+			action: 'Get the versions of a file',
+			description: 'List every version of the given file',
+			method: 'GET',
+			plane: 'regional',
+			path: '/v1/files/{fileId}/versions',
+			list: true,
+			params: [pathLocator('fileId', 'File', 'file')],
+		},
+		{
+			resource: 'file',
+			operation: 'activateVersion',
+			name: 'Activate Version',
+			action: 'Activate a file version',
+			description: 'Make a previous version the active version of the file',
+			method: 'POST',
+			plane: 'regional',
+			path: '/v1/files/{fileId}/versions/{versionId}/activate',
+			params: [
+				pathLocator('fileId', 'File', 'file'),
+				{ name: 'versionId', displayName: 'Version', in: 'path', type: 'string', required: true, placeholder: 'e.g. ver_…' },
+			],
+		},
+		{
+			resource: 'file',
+			operation: 'deleteVersion',
+			name: 'Delete Version',
+			action: 'Delete a file version',
+			description: 'Permanently delete one version of a file',
+			method: 'DELETE',
+			plane: 'regional',
+			path: '/v1/files/{fileId}/versions/{versionId}',
+			params: [
+				pathLocator('fileId', 'File', 'file'),
+				{ name: 'versionId', displayName: 'Version', in: 'path', type: 'string', required: true, placeholder: 'e.g. ver_…' },
+			],
+		},
+	],
+};
