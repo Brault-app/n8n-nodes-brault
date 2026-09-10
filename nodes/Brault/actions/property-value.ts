@@ -51,6 +51,23 @@ export const valueParams: ParamSpec[] = [
 	},
 	{ name: 'add', displayName: 'Add Option IDs', in: 'body', type: 'string', csv: true, showWhen: { valueType: ['tags'] } },
 	{ name: 'remove', displayName: 'Remove Option IDs', in: 'body', type: 'string', csv: true, showWhen: { valueType: ['tags'] } },
+	{
+		displayName: 'Property Type To Clear',
+		name: 'clearType',
+		in: 'body',
+		type: 'options',
+		default: 'text',
+		showWhen: { valueType: ['clear'] },
+		description:
+			'Status applies to board properties only. Tag properties have no null form — clear them by removing their options with "Tags" instead.',
+		options: [
+			{ name: 'Checkbox', value: 'checkbox' },
+			{ name: 'Date', value: 'date' },
+			{ name: 'Person', value: 'person' },
+			{ name: 'Status (Board Only)', value: 'status' },
+			{ name: 'Text', value: 'text' },
+		],
+	},
 ];
 
 export interface ValueInput {
@@ -61,6 +78,7 @@ export interface ValueInput {
 	option_id?: unknown;
 	add?: unknown;
 	remove?: unknown;
+	clearType?: unknown;
 }
 
 export function buildValueBody(kind: 'file' | 'board', valueType: string, v: ValueInput): IDataObject {
@@ -79,15 +97,22 @@ export function buildValueBody(kind: 'file' | 'board', valueType: string, v: Val
 			if (kind !== 'board') throw new Error('Status values exist on board properties only');
 			return { status: { option_id: String(v.option_id ?? '') } };
 		case 'tags': {
-			const body: IDataObject = {};
 			const add = list(v.add);
 			const remove = list(v.remove);
+			if (!add.length && !remove.length) throw new Error('Provide at least one option ID to add or remove');
+			const body: IDataObject = {};
 			if (add.length) body.add = add;
 			if (remove.length) body.remove = remove;
 			return { [kind === 'file' ? 'tag' : 'multi_tag']: body };
 		}
-		case 'clear':
-			return { text: null };
+		case 'clear': {
+			const clearType = String(v.clearType ?? 'text');
+			if (!['text', 'date', 'checkbox', 'person', 'status'].includes(clearType)) {
+				throw new Error(`Unknown property type ${clearType}`);
+			}
+			if (clearType === 'status' && kind !== 'board') throw new Error('Status values exist on board properties only');
+			return { [clearType]: null };
+		}
 		default:
 			throw new Error(`Unknown value type ${valueType}`);
 	}
