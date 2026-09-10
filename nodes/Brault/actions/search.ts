@@ -26,7 +26,10 @@ export const search: ResourceSpec = {
 				queryParam('q', 'Query', 'string', { required: true, placeholder: 'e.g. red sneakers on white' }),
 			],
 			fields: [
-				queryParam('scope', 'Scope', 'string', { description: 'Library or folder ID to search in' }),
+				queryParam('scope', 'Scope', 'string', {
+					description: 'Where to search: "brandspace", "library:<id>" or "folder:<id>"',
+					placeholder: 'e.g. library:cmtr…',
+				}),
 			],
 		},
 	],

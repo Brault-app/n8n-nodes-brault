@@ -63,4 +63,20 @@ describe('planRequest', () => {
 			'Width must be a number',
 		);
 	});
+	it('omits a multiOptions field left unselected (empty array)', () => {
+		const multiSpec: OperationSpec = {
+			...spec,
+			fields: [{ name: 'kind', displayName: 'Kind', in: 'query', type: 'multiOptions' }],
+		};
+		const plan = planRequest(multiSpec, { fileId: 'f1', kind: [] });
+		expect(plan.qs).toEqual({});
+	});
+	it('sends a multiOptions field with a selected value', () => {
+		const multiSpec: OperationSpec = {
+			...spec,
+			fields: [{ name: 'kind', displayName: 'Kind', in: 'query', type: 'multiOptions' }],
+		};
+		const plan = planRequest(multiSpec, { fileId: 'f1', kind: ['image'] });
+		expect(plan.qs).toEqual({ kind: ['image'] });
+	});
 });

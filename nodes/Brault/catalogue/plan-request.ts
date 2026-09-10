@@ -11,7 +11,7 @@ export interface RequestPlan {
 }
 
 function isEmpty(v: unknown): boolean {
-	return v === undefined || v === null || (typeof v === 'string' && v.trim() === '');
+	return v === undefined || v === null || (typeof v === 'string' && v.trim() === '') || (Array.isArray(v) && v.length === 0);
 }
 
 /**

@@ -26,7 +26,7 @@ export const folder: ResourceSpec = {
 				{ ...libraryLocator(), in: 'query' },
 				{ ...folderLocator(), in: 'query', displayName: 'Parent Folder' },
 				queryParam('recursive', 'Recursive', 'boolean', {
-					description: 'Whether to include folders nested under the parent folder',
+					description: 'Whether to include items in subfolders',
 				}),
 			],
 		},
@@ -92,7 +92,7 @@ export const folder: ResourceSpec = {
 			params: [pathLocator('folderId', 'Folder', 'folder')],
 			fields: [
 				queryParam('permanent', 'Permanent', 'boolean', {
-					description: 'Delete permanently instead of moving to trash',
+					description: 'Whether to delete permanently instead of moving to trash',
 				}),
 			],
 		},

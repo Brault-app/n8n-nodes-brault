@@ -36,7 +36,7 @@ export const file: ResourceSpec = {
 				{ ...libraryLocator(), in: 'query' },
 				{ ...folderLocator(), in: 'query' },
 				queryParam('recursive', 'Recursive', 'boolean', {
-					description: 'Whether to include files nested under the folder',
+					description: 'Whether to include items in subfolders',
 				}),
 				queryParam('q', 'Search Text', 'string', { description: 'Free-text search over the file name' }),
 				queryParam('extensions', 'Extensions', 'string', {
@@ -63,7 +63,7 @@ export const file: ResourceSpec = {
 					description: 'Advanced filter expression, see developers.brault.app/docs/reference/files',
 				}),
 				queryParam('sort', 'Sort', 'options', {
-					default: 'name',
+					default: 'created_at',
 					description: 'Field to sort results by',
 					options: [
 						{ name: 'Name', value: 'name' },
@@ -72,7 +72,7 @@ export const file: ResourceSpec = {
 					],
 				}),
 				queryParam('order', 'Order', 'options', {
-					default: 'asc',
+					default: 'desc',
 					description: 'Sort direction',
 					options: [
 						{ name: 'Ascending', value: 'asc' },
@@ -118,7 +118,7 @@ export const file: ResourceSpec = {
 			plane: 'regional',
 			path: '/v1/files/{fileId}/move',
 			params: [pathLocator('fileId', 'File', 'file')],
-			fields: [libraryLocator(), folderLocator(), bodyParam('to_root', 'To Root', 'boolean', { description: 'Move to the brandspace root ("All Files")' })],
+			fields: [libraryLocator(), folderLocator(), bodyParam('to_root', 'To Root', 'boolean', { description: 'Whether to move/copy to the brandspace root instead of a folder' })],
 		},
 		{
 			resource: 'file',
@@ -130,7 +130,7 @@ export const file: ResourceSpec = {
 			plane: 'regional',
 			path: '/v1/files/{fileId}/copy',
 			params: [pathLocator('fileId', 'File', 'file')],
-			fields: [libraryLocator(), folderLocator(), bodyParam('to_root', 'To Root', 'boolean', { description: 'Copy to the brandspace root ("All Files")' })],
+			fields: [libraryLocator(), folderLocator(), bodyParam('to_root', 'To Root', 'boolean', { description: 'Whether to move/copy to the brandspace root instead of a folder' })],
 		},
 		{
 			resource: 'file',
@@ -142,7 +142,7 @@ export const file: ResourceSpec = {
 			plane: 'regional',
 			path: '/v1/files/{fileId}',
 			params: [pathLocator('fileId', 'File', 'file')],
-			fields: [queryParam('permanent', 'Permanent', 'boolean', { description: 'Delete permanently instead of moving to trash' })],
+			fields: [queryParam('permanent', 'Permanent', 'boolean', { description: 'Whether to delete permanently instead of moving to trash' })],
 		},
 		{
 			resource: 'file',
@@ -296,7 +296,7 @@ export const file: ResourceSpec = {
 				libraryLocator(),
 				folderLocator(),
 				bodyParam('file_id', 'Existing File ID', 'string', { description: 'Upload as a new version of this file' }),
-				bodyParam('to_root', 'To Root', 'boolean', { description: 'Upload to the brandspace root ("All Files")' }),
+				bodyParam('to_root', 'To Root', 'boolean', { description: 'Whether to upload to the brandspace root instead of a folder' }),
 			],
 			custom: uploadFile,
 		},
