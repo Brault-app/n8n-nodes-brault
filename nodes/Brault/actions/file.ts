@@ -7,6 +7,7 @@
 import { NodeOperationError } from 'n8n-workflow';
 import { bodyParam, folderLocator, libraryLocator, pathLocator, queryParam } from '../catalogue/common-params';
 import type { CustomHandler, ResourceSpec } from '../catalogue/types';
+import { downloadFile, uploadFile } from './file-binary';
 import { importFromUrl } from './file-import-wait';
 
 const FILE_KINDS = ['image', 'video', 'audio', 'document', 'link', 'other'];
@@ -178,6 +179,39 @@ export const file: ResourceSpec = {
 		},
 		{
 			resource: 'file',
+			operation: 'download',
+			name: 'Download',
+			action: 'Download a file',
+			description: 'Download the file bytes into a binary property',
+			method: 'GET',
+			plane: 'regional',
+			path: '/v1/files/{fileId}/download',
+			params: [
+				pathLocator('fileId', 'File', 'file'),
+				{
+					displayName: 'Output Binary Field',
+					name: 'binaryProperty',
+					in: 'body',
+					type: 'string',
+					default: 'data',
+					description: 'Name of the binary property to write the downloaded file to',
+				},
+			],
+			fields: [
+				queryParam('rendition', 'Rendition', 'options', {
+					default: 'original',
+					description: 'Which rendition of the file to download',
+					options: [
+						{ name: 'Original', value: 'original' },
+						{ name: 'Preview', value: 'preview' },
+						{ name: 'Thumbnail', value: 'thumbnail' },
+					],
+				}),
+			],
+			custom: downloadFile,
+		},
+		{
+			resource: 'file',
 			operation: 'getSimilar',
 			name: 'Get Similar',
 			action: 'Get files similar to a file',
@@ -236,6 +270,35 @@ export const file: ResourceSpec = {
 				},
 			],
 			custom: importFromUrl,
+		},
+		{
+			resource: 'file',
+			operation: 'upload',
+			name: 'Upload',
+			action: 'Upload a file',
+			description: 'Upload binary data from a previous node as a new file or a new version',
+			method: 'POST',
+			plane: 'regional',
+			path: '/v1/uploads',
+			params: [
+				{
+					displayName: 'Input Binary Field',
+					name: 'binaryProperty',
+					in: 'body',
+					type: 'string',
+					default: 'data',
+					required: true,
+					description: 'Name of the binary property that holds the file',
+				},
+			],
+			fields: [
+				bodyParam('name', 'File Name', 'string', { description: 'Name for the file; defaults to the binary file name' }),
+				libraryLocator(),
+				folderLocator(),
+				bodyParam('file_id', 'Existing File ID', 'string', { description: 'Upload as a new version of this file' }),
+				bodyParam('to_root', 'To Root', 'boolean', { description: 'Upload to the brandspace root ("All Files")' }),
+			],
+			custom: uploadFile,
 		},
 		{
 			resource: 'file',
