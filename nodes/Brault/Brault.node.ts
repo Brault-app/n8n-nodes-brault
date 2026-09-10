@@ -10,8 +10,7 @@ export class Brault implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Brault',
 		name: 'brault',
-		// Temporary placeholder mark; Task 15 replaces this with the exported Brault mark.
-		icon: 'file:brault.svg',
+		icon: { light: 'file:brault.svg', dark: 'file:brault.dark.svg' },
 		group: ['transform'],
 		version: 1,
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',

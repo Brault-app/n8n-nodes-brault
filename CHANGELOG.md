@@ -7,7 +7,22 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+## 0.1.0 - 2026-09-10
+
 ### Added
 
-- Package scaffold: build/lint/test tooling, CI workflow, and repo conventions. No
-  nodes or credentials yet.
+- Package scaffold: build/lint/test tooling, CI workflow, and repo conventions.
+- Credential `braultApi` (API key + base URL) with a `GET /v1/me` connection test.
+- Node `Brault`: 17 resources and 92 operations covering libraries, folders, files
+  (including binary upload, download and version management), imports, search,
+  comments, replies, boards, board properties, brandspace properties, pages, shared
+  links, transfers, bulk downloads, brandspace, members and roles. Exposed as a tool
+  for n8n AI agents (`usableAsTool: true`).
+- Node `Brault Trigger`: webhook lifecycle (create on activate, delete on deactivate)
+  for any event in the Brault catalogue, with `Brault-Signature` verification on by
+  default.
+- The Brault mark as the package icon, replacing the placeholder rounded-square "B"
+  used during development, with light and dark themed variants
+  (`icon: { light, dark }`).
+- `specs/guides/smoke-checklist.md`: the operator's manual smoke procedure against
+  staging.

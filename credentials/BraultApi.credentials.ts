@@ -3,9 +3,7 @@ import type { IAuthenticateGeneric, ICredentialTestRequest, ICredentialType, INo
 export class BraultApi implements ICredentialType {
 	name = 'braultApi';
 	displayName = 'Brault API';
-	// Temporary placeholder mark; Task 15 replaces this with the exported Brault mark
-	// from brault-frontend/src/assets per specs/plans/2026-09-10-n8n-node.md Task 15.
-	icon = 'file:brault.svg' as const;
+	icon = { light: 'file:brault.svg', dark: 'file:brault.dark.svg' } as const;
 	documentationUrl = 'https://developers.brault.app/docs/get-an-api-key';
 	properties: INodeProperties[] = [
 		{
