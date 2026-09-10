@@ -24,7 +24,7 @@ export const brandspace: ResourceSpec = {
 			resource: 'brandspace',
 			operation: 'getUsage',
 			name: 'Get Usage',
-			action: 'Get api usage for the brandspace',
+			action: 'Get API usage for the brandspace',
 			description: 'Current request, upload and download counters against the plan limits',
 			method: 'GET',
 			plane: 'central',

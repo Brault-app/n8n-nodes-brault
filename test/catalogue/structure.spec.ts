@@ -8,7 +8,8 @@ describe('catalogue structure', () => {
 		expect(new Set(keys).size).toBe(keys.length);
 		for (const o of ops) {
 			expect(o.name).toMatch(/^[A-Z]/);
-			expect(o.action).toMatch(/^[A-Z][^A-Z]*$/);
+			// Sentence case: one leading capital, then no capitals except the acronyms n8n copy uses.
+			expect(o.action.replace(/\b(API|URL|URLs|ID|IDs)\b/g, 'x')).toMatch(/^[A-Z][^A-Z]*$/);
 			expect(o.description.length).toBeGreaterThan(8);
 			expect(o.path.startsWith('/v1/')).toBe(true);
 			for (const m of o.path.matchAll(/\{(\w+)\}/g))
