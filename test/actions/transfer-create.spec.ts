@@ -31,8 +31,11 @@ const spec = {
 	fields: [{}],
 } as never;
 const ctx = {
+	getNode: () => ({ name: 'Brault', type: 'n8n-nodes-brault.brault', typeVersion: 1, position: [0, 0], parameters: {} }),
 	getNodeParameter: (n: string) => (n === 'additionalFields' ? { binaryProperties: 'data', file_ids: 'f1', expires_in_days: 3 } : undefined),
 } as never;
+
+beforeEach(() => { req.mockClear(); (uploadWithSession as jest.Mock).mockClear(); });
 
 it('declares uploads, uploads each, then completes', async () => {
 	req
@@ -51,8 +54,15 @@ it('completes with no declared uploads even when zero binary properties are sent
 		getNodeParameter: (n: string) => (n === 'additionalFields' ? { file_ids: 'f1', folder_ids: 'fo1' } : undefined),
 	} as never;
 	const out = await createTransfer(noBinaryCtx, 0, spec);
-	expect(req.mock.calls[2][1]).toMatchObject({ body: { files: [{ id: 'f1' }], folders: ['fo1'] } });
-	expect(req.mock.calls[2][1].body.uploads).toBeUndefined();
-	expect(req.mock.calls[3][1]).toMatchObject({ path: '/v1/transfers/t2/complete' });
+	expect(req.mock.calls[0][1]).toMatchObject({ body: { files: [{ id: 'f1' }], folders: ['fo1'] } });
+	expect(req.mock.calls[0][1].body.uploads).toBeUndefined();
+	expect(req.mock.calls[1][1]).toMatchObject({ path: '/v1/transfers/t2/complete' });
 	expect(out[0].json).toMatchObject({ id: 't2', status: 'ready' });
+});
+
+it('fails fast when Brault accepts fewer uploads than binaries were attached', async () => {
+	req.mockResolvedValueOnce({ id: 't3', uploads: [] });
+	await expect(createTransfer(ctx, 0, spec)).rejects.toThrow(/accepted 0 of 1 uploads/);
+	expect(uploadWithSession).not.toHaveBeenCalled();
+	expect(req.mock.calls.some((c: unknown[]) => String((c[1] as { path: string }).path).endsWith('/complete'))).toBe(false);
 });

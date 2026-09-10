@@ -1,4 +1,5 @@
 import type { IDataObject, IExecuteFunctions, INodeExecutionData } from 'n8n-workflow';
+import { NodeOperationError } from 'n8n-workflow';
 import type { OperationSpec } from '../catalogue/types';
 import { readBinarySource, uploadWithSession } from '../transport/binary';
 import { braultRequest } from '../transport/request';
@@ -26,7 +27,11 @@ export async function createTransfer(ctx: IExecuteFunctions, i: number, spec: Op
 	if (folders.length) body.folders = folders;
 	if (sources.length) body.uploads = sources.map((s) => ({ name: s.fileName, size: s.size }));
 	if (typeof v.password === 'string' && v.password) body.password = v.password;
-	if (v.expires_in_days !== undefined && v.expires_in_days !== '') body.expires_in_days = Number(v.expires_in_days);
+	if (v.expires_in_days !== undefined && v.expires_in_days !== '') {
+		const days = Number(v.expires_in_days);
+		if (!Number.isFinite(days)) throw new NodeOperationError(ctx.getNode(), 'Expires In Days must be a number', { itemIndex: i });
+		body.expires_in_days = days;
+	}
 
 	const draft = await braultRequest<
 		IDataObject & {
@@ -36,6 +41,9 @@ export async function createTransfer(ctx: IExecuteFunctions, i: number, spec: Op
 	>(ctx, { plane: 'regional', method: 'POST', path: '/v1/transfers', body, idempotent: true });
 
 	const declared = draft.uploads ?? [];
+	if (declared.length < sources.length) {
+		throw new NodeOperationError(ctx.getNode(), `Brault accepted ${declared.length} of ${sources.length} uploads for transfer ${draft.id}`, { itemIndex: i });
+	}
 	for (let k = 0; k < sources.length; k++) {
 		const u = declared[k];
 		if (!u) break;

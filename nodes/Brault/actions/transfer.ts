@@ -79,7 +79,7 @@ export const transfer: ResourceSpec = {
 			path: '/v1/transfers/{transferId}',
 			params: [transferIdParam],
 			fields: [
-				bodyParam('password', 'Password', 'string', { description: 'Password required to open the transfer; clears it when left empty' }),
+				bodyParam('password', 'Password', 'string', { description: 'New password required to open the transfer. Leave empty to keep the current one' }),
 				bodyParam('expires_in_days', 'Expires in Days', 'number', {
 					default: 7,
 					description: 'Whole days counted from today until the transfer expires',
