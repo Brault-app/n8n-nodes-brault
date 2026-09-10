@@ -24,7 +24,7 @@ export function paramToProperty(p: ParamSpec, op: OperationSpec): INodePropertie
 			required: p.required,
 			default: { mode: 'list', value: '' },
 			description: p.description,
-			displayOptions: show(op),
+			displayOptions: show(op, p.showWhen),
 			modes: [
 				{
 					displayName: 'From List',
@@ -46,7 +46,7 @@ export function paramToProperty(p: ParamSpec, op: OperationSpec): INodePropertie
 		description: p.description,
 		placeholder: p.placeholder,
 		required: p.required,
-		displayOptions: show(op),
+		displayOptions: show(op, p.showWhen),
 	};
 	if (p.type === 'options' || p.type === 'multiOptions') base.options = p.options as INodePropertyOptions[];
 	if (p.type === 'json') base.typeOptions = { rows: 4 };

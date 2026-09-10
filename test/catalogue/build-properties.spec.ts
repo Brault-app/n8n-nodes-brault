@@ -1,5 +1,5 @@
-import { buildProperties } from '../../nodes/Brault/catalogue/build-properties';
-import type { ResourceSpec } from '../../nodes/Brault/catalogue/types';
+import { buildProperties, paramToProperty } from '../../nodes/Brault/catalogue/build-properties';
+import type { OperationSpec, ResourceSpec } from '../../nodes/Brault/catalogue/types';
 
 const resources: ResourceSpec[] = [
 	{
@@ -93,6 +93,25 @@ describe('buildProperties', () => {
 			type: 'collection',
 			displayOptions: { show: { resource: ['library'], operation: ['create'] } },
 			options: [{ name: 'emoji' }],
+		});
+	});
+	it('merges a param showWhen into displayOptions.show alongside resource/operation', () => {
+		const op: OperationSpec = {
+			resource: 'library',
+			operation: 'setValue',
+			name: 'Set Value',
+			action: 'Set a value',
+			description: 'Set a value on the library',
+			method: 'PUT',
+			plane: 'regional',
+			path: '/v1/libraries/{libraryId}/value',
+			params: [
+				{ name: 'valueType', displayName: 'Value Type', in: 'body', type: 'options', default: 'text', options: [{ name: 'Text', value: 'text' }] },
+				{ name: 'text', displayName: 'Text', in: 'body', type: 'string', showWhen: { valueType: ['text'] } },
+			],
+		};
+		expect(paramToProperty(op.params![1], op).displayOptions).toEqual({
+			show: { resource: ['library'], operation: ['setValue'], valueType: ['text'] },
 		});
 	});
 });

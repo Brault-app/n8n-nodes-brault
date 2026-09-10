@@ -23,6 +23,8 @@ export interface ParamSpec {
 	locator?: LocatorKind;
 	/** A string typed as "a, b" becomes an array of trimmed strings */
 	csv?: boolean;
+	/** Merged into the rendered property's `displayOptions.show`, alongside resource/operation */
+	showWhen?: Record<string, unknown[]>;
 }
 
 export interface OperationSpec {
