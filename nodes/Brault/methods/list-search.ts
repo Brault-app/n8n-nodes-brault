@@ -29,7 +29,7 @@ async function search(
 	};
 }
 
-export const listSearch: Record<string, ListSearchMethod> = {
+export const listSearch = {
 	async searchLibraries(this: ILoadOptionsFunctions, filter?: string, token?: string) {
 		return search(this, '/v1/libraries', filter, token);
 	},
@@ -48,4 +48,4 @@ export const listSearch: Record<string, ListSearchMethod> = {
 	async searchProperties(this: ILoadOptionsFunctions, filter?: string, token?: string) {
 		return search(this, '/v1/properties', filter, token);
 	},
-};
+} satisfies Record<string, ListSearchMethod>;
