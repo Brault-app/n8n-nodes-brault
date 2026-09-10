@@ -3,6 +3,8 @@ import type { TransportContext } from './hosts';
 import { braultRequest, type BraultRequestOptions, type ListEnvelope } from './request';
 
 export const LIMIT_PARAM_MAX = 1000;
+// Safety ceiling: when the cap or the stalled-cursor guard fires, getAll returns what it
+// collected so far instead of throwing (a defensive guard must not break a workflow run).
 export const MAX_PAGES = 1000;
 const PAGE_MAX = 100;
 
