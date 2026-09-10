@@ -20,6 +20,7 @@ export interface UploadSession {
 	url?: string | null;
 	part_size?: number | null;
 	part_count?: number | null;
+	content_type?: string | null;
 }
 export interface UploadRoutes {
 	parts: string;
@@ -33,6 +34,7 @@ export interface UploadRoutes {
  * exceeds `partSize` regardless of source size.
  */
 export async function* chunkSource(source: ByteStream | Buffer, partSize: number): AsyncGenerator<Buffer> {
+	if (partSize <= 0) throw new Error(`chunkSource: partSize must be positive, got ${partSize}`);
 	if (Buffer.isBuffer(source)) {
 		for (let o = 0; o < source.length; o += partSize) yield source.subarray(o, Math.min(o + partSize, source.length));
 		return;
@@ -57,8 +59,8 @@ export async function* chunkSource(source: ByteStream | Buffer, partSize: number
 	if (pendingLength) yield Buffer.concat(pending);
 }
 
-async function putBytes(ctx: TransportContext, url: string, body: Buffer | ByteStream, size?: number): Promise<string> {
-	const headers: Record<string, string> = { 'Content-Type': 'application/octet-stream' };
+async function putBytes(ctx: TransportContext, url: string, body: Buffer | ByteStream, size?: number, contentType?: string): Promise<string> {
+	const headers: Record<string, string> = { 'Content-Type': contentType ?? 'application/octet-stream' };
 	if (size !== undefined) headers['Content-Length'] = String(size);
 	const res = (await ctx.helpers.httpRequest({ method: 'PUT', url, body, headers, returnFullResponse: true })) as {
 		headers?: Record<string, string>;
@@ -77,12 +79,16 @@ export async function uploadWithSession(
 	session: UploadSession,
 	source: ByteStream | Buffer,
 	routes: UploadRoutes,
+	meta?: { size?: number; mimeType?: string },
 ): Promise<IDataObject> {
+	let failure: unknown = null;
 	try {
 		if (session.method === 'put') {
 			const target = session.upload_url ?? session.url;
 			if (!target) throw new NodeOperationError(ctx.getNode(), 'Upload session has no PUT URL');
-			await putBytes(ctx, target, source, Buffer.isBuffer(source) ? source.length : undefined);
+			const contentType = session.content_type ?? meta?.mimeType ?? 'application/octet-stream';
+			const size = Buffer.isBuffer(source) ? source.length : meta?.size;
+			await putBytes(ctx, target, source, size, contentType);
 			return braultRequest<IDataObject>(ctx, { plane: 'regional', method: 'POST', path: routes.complete, body: {} });
 		}
 		const partSize = Number(session.part_size ?? 64 * 1024 * 1024);
@@ -98,10 +104,12 @@ export async function uploadWithSession(
 			});
 			const url = issued.parts.find((p) => p.part_number === partNumber)?.upload_url;
 			if (!url) throw new NodeOperationError(ctx.getNode(), `No upload URL for part ${partNumber}`);
-			parts.push({ part_number: partNumber, etag: await putBytes(ctx, url, chunk, chunk.length) });
+			const etag = await putBytes(ctx, url, chunk, chunk.length);
+			if (!etag) throw new NodeOperationError(ctx.getNode(), `Part ${partNumber} upload returned no ETag`);
+			parts.push({ part_number: partNumber, etag });
 		}
 		return braultRequest<IDataObject>(ctx, { plane: 'regional', method: 'POST', path: routes.complete, body: { parts } });
-	} catch (error) {
+	} catch (caught) {
 		if (routes.abort) {
 			try {
 				await braultRequest(ctx, { plane: 'regional', method: 'POST', path: routes.abort });
@@ -109,8 +117,9 @@ export async function uploadWithSession(
 				/* best effort */
 			}
 		}
-		throw new NodeOperationError(ctx.getNode(), (error as Error).message);
+		failure = caught;
 	}
+	throw failure instanceof Error ? failure : new NodeOperationError(ctx.getNode(), String(failure));
 }
 
 /**
@@ -129,17 +138,23 @@ export async function readBinarySource(
 	const mimeType = binary.mimeType ?? 'application/octet-stream';
 	if (binary.id) {
 		const meta = await ctx.helpers.getBinaryMetadata(binary.id);
-		return { source: await ctx.helpers.getBinaryStream(binary.id), size: Number(meta.fileSize ?? 0), fileName, mimeType };
+		const size = Number(meta.fileSize);
+		if (!(size > 0)) throw new NodeOperationError(ctx.getNode(), `Binary property "${property}" has no known size`);
+		return { source: await ctx.helpers.getBinaryStream(binary.id), size, fileName, mimeType };
 	}
 	const buffer = await ctx.helpers.getBinaryDataBuffer(i, property);
 	return { source: buffer, size: buffer.length, fileName, mimeType };
 }
 
-/** Downloads a signed URL into an n8n binary property. */
+/**
+ * Downloads a signed URL into an n8n binary property. Streams the response body
+ * straight into `prepareBinaryData` — never buffers the whole file in memory.
+ */
 export async function downloadToBinary(ctx: IExecuteFunctions, url: string, fileName: string, mimeType?: string): Promise<IBinaryData> {
-	const res = (await ctx.helpers.httpRequest({ method: 'GET', url, encoding: 'arraybuffer', returnFullResponse: true })) as {
-		body: Buffer;
+	const res = (await ctx.helpers.httpRequest({ method: 'GET', url, encoding: 'stream', returnFullResponse: true })) as {
+		body: ByteStream;
 		headers: Record<string, string>;
 	};
-	return ctx.helpers.prepareBinaryData(Buffer.from(res.body), fileName, mimeType ?? res.headers['content-type']);
+	const contentType = mimeType ?? res.headers['content-type'];
+	return ctx.helpers.prepareBinaryData(res.body as Parameters<typeof ctx.helpers.prepareBinaryData>[0], fileName, contentType);
 }

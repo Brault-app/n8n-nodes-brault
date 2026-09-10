@@ -9,16 +9,22 @@ import { readValues, toItems } from './run-operation';
 export async function uploadFile(ctx: IExecuteFunctions, i: number, spec: OperationSpec): Promise<INodeExecutionData[]> {
 	const v = readValues(ctx, i, spec);
 	const property = String(v.binaryProperty ?? 'data');
-	const { source, size, fileName } = await readBinarySource(ctx, i, property);
+	const { source, size, fileName, mimeType } = await readBinarySource(ctx, i, property);
 	const body: IDataObject = { name: String(v.name || fileName), size };
-	for (const k of ['library_id', 'folder_id', 'file_id', 'to_root'])
+	for (const k of ['library_id', 'folder_id', 'file_id'])
 		if (v[k] !== undefined && v[k] !== '') body[k] = v[k] as IDataObject[string];
 	const session = await braultRequest<UploadSession>(ctx, { plane: 'regional', method: 'POST', path: '/v1/uploads', body, idempotent: true });
-	const file = await uploadWithSession(ctx, session, source, {
-		parts: `/v1/uploads/${session.id}/parts`,
-		complete: `/v1/uploads/${session.id}/complete`,
-		abort: `/v1/uploads/${session.id}/abort`,
-	});
+	const file = await uploadWithSession(
+		ctx,
+		session,
+		source,
+		{
+			parts: `/v1/uploads/${session.id}/parts`,
+			complete: `/v1/uploads/${session.id}/complete`,
+			abort: `/v1/uploads/${session.id}/abort`,
+		},
+		{ size, mimeType },
+	);
 	return toItems(file, i);
 }
 

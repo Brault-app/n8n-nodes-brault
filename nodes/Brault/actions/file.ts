@@ -291,7 +291,6 @@ export const file: ResourceSpec = {
 				libraryLocator(),
 				folderLocator(),
 				bodyParam('file_id', 'Existing File ID', 'string', { description: 'Upload as a new version of this file' }),
-				bodyParam('to_root', 'To Root', 'boolean', { description: 'Whether to upload to the brandspace root instead of a folder' }),
 			],
 			custom: uploadFile,
 		},
