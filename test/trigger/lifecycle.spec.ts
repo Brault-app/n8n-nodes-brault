@@ -37,15 +37,27 @@ describe('Brault Trigger lifecycle', () => {
 	it('checkExists is true only when the stored endpoint has our URL', async () => {
 		raw.mockResolvedValueOnce({ statusCode: 200, headers: {}, body: { data: { id: 'wh_1', url: 'https://n8n.example/webhook/abc' } } });
 		await expect(hooks.checkExists.call(hookCtx({ webhookId: 'wh_1', secret: 's' }))).resolves.toBe(true);
+		expect(raw.mock.calls[0][1]).toMatchObject({ method: 'GET', path: '/v1/webhooks/wh_1', plane: 'regional' });
 		raw.mockResolvedValueOnce({ statusCode: 200, headers: {}, body: { data: { id: 'wh_1', url: 'https://other' } } });
 		const sd: Record<string, unknown> = { webhookId: 'wh_1', secret: 's' };
 		await expect(hooks.checkExists.call(hookCtx(sd))).resolves.toBe(false);
 		expect(sd).toEqual({});
 	});
+	it('checkExists returns false without an HTTP call when webhookId is absent', async () => {
+		const sd: Record<string, unknown> = {};
+		await expect(hooks.checkExists.call(hookCtx(sd))).resolves.toBe(false);
+		expect(raw).not.toHaveBeenCalled();
+	});
 	it('delete ignores 404 and clears static data', async () => {
 		raw.mockResolvedValueOnce({ statusCode: 404, headers: {}, body: {} });
 		const sd: Record<string, unknown> = { webhookId: 'wh_1', secret: 's' };
 		await expect(hooks.delete.call(hookCtx(sd))).resolves.toBe(true);
+		expect(raw.mock.calls[0][1]).toMatchObject({ method: 'DELETE', path: '/v1/webhooks/wh_1', plane: 'regional' });
 		expect(sd).toEqual({});
+	});
+	it('delete returns true without an HTTP call when webhookId is absent', async () => {
+		const sd: Record<string, unknown> = {};
+		await expect(hooks.delete.call(hookCtx(sd))).resolves.toBe(true);
+		expect(raw).not.toHaveBeenCalled();
 	});
 });

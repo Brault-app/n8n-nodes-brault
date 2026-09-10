@@ -121,8 +121,13 @@ export class BraultTrigger implements INodeType {
 		const options = this.getNodeParameter('options', {}) as { verifySignature?: boolean };
 		const sd = this.getWorkflowStaticData('node') as TriggerStaticData;
 		if (options.verifySignature !== false) {
+			if (!sd.secret) {
+				const res = this.getResponseObject();
+				res.status(401).json({ error: 'signature unverifiable: endpoint secret missing, deactivate and reactivate the workflow' });
+				return { noWebhookResponse: true };
+			}
 			const raw = req.rawBody ?? Buffer.from(JSON.stringify(req.body ?? {}));
-			const result = verifySignature(headers['brault-signature'], raw, sd.secret ?? '');
+			const result = verifySignature(headers['brault-signature'], raw, sd.secret);
 			if (!result.ok) {
 				const res = this.getResponseObject();
 				res.status(401).json({ error: `signature ${result.reason}` });
