@@ -4,10 +4,25 @@
   "description": "Brault node for n8n: automate your digital asset library with the Brault Public API (files, folders, boards, comments, review links, transfers, webhooks).",
   "license": "MIT",
   "homepage": "https://developers.brault.app",
-  "keywords": ["n8n-community-node-package", "brault", "dam", "digital asset management", "creative", "review"],
-  "author": { "name": "Brault", "email": "hello@brault.app" },
-  "repository": { "type": "git", "url": "https://github.com/Brault-app/n8n-nodes-brault.git" },
-  "engines": { "node": ">=20" },
+  "keywords": [
+    "n8n-community-node-package",
+    "brault",
+    "dam",
+    "digital asset management",
+    "creative",
+    "review"
+  ],
+  "author": {
+    "name": "Brault",
+    "email": "hello@brault.app"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Brault-app/n8n-nodes-brault.git"
+  },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "build": "n8n-node build",
     "build:watch": "tsc --watch",
@@ -19,12 +34,24 @@
     "release": "n8n-node release",
     "prepublishOnly": "n8n-node prerelease"
   },
-  "files": ["dist", "CHANGELOG.md"],
+  "files": [
+    "dist",
+    "CHANGELOG.md"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "n8n": {
     "n8nNodesApiVersion": 1,
     "strict": true,
-    "credentials": ["dist/credentials/BraultApi.credentials.js"],
-    "nodes": ["dist/nodes/Brault/Brault.node.js", "dist/nodes/BraultTrigger/BraultTrigger.node.js"]
+    "credentials": [
+      "dist/credentials/BraultApi.credentials.js"
+    ],
+    "nodes": [
+      "dist/nodes/Brault/Brault.node.js",
+      "dist/nodes/BraultTrigger/BraultTrigger.node.js"
+    ]
   },
   "devDependencies": {
     "@n8n/node-cli": "^0.47.2",
@@ -38,5 +65,7 @@
     "ts-jest": "^29.2.5",
     "typescript": "5.9.3"
   },
-  "peerDependencies": { "n8n-workflow": "*" }
+  "peerDependencies": {
+    "n8n-workflow": "*"
+  }
 }
