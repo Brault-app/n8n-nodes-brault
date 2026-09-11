@@ -101,5 +101,15 @@ jobs:
       - name: Scan the published package
         # @n8n/scan-community-package only resolves published packages by name (no
         # local-tarball mode), so n8n's community-node verification runs after publish.
-        # A failure here does not unpublish; fix and release a patch.
-        run: npm run scan
+        # The registry needs a moment to serve a fresh version: wait for it first, then
+        # fail the job if the scanner reports a problem. A failure here does not
+        # unpublish; fix and release a patch.
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          for i in $(seq 1 30); do
+            if npm view "n8n-nodes-brault@$VERSION" version >/dev/null 2>&1; then break; fi
+            echo "waiting for n8n-nodes-brault@$VERSION on the registry ($i/30)"; sleep 10
+          done
+          npm view "n8n-nodes-brault@$VERSION" version
+          npm run scan 2>&1 | tee scan.log
+          if grep -qiE "error|failed|violation|not found" scan.log; then echo "scan reported problems"; exit 1; fi
