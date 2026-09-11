@@ -41,6 +41,8 @@ export async function createTransfer(ctx: IExecuteFunctions, i: number, spec: Op
 	>(ctx, { plane: 'regional', method: 'POST', path: '/v1/transfers', body, idempotent: true });
 
 	const declared = draft.uploads ?? [];
+	// Without declared uploads the API creates the transfer outright (no draft), so there is nothing to complete.
+	if (sources.length === 0 && declared.length === 0) return toItems(draft, i);
 	if (declared.length < sources.length) {
 		throw new NodeOperationError(ctx.getNode(), `Brault accepted ${declared.length} of ${sources.length} uploads for transfer ${draft.id}`, { itemIndex: i });
 	}

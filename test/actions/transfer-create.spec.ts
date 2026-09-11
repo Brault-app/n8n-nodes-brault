@@ -48,15 +48,15 @@ it('declares uploads, uploads each, then completes', async () => {
 	expect(out[0].json).toMatchObject({ id: 't1', status: 'ready' });
 });
 
-it('completes with no declared uploads even when zero binary properties are sent', async () => {
-	req.mockResolvedValueOnce({ id: 't2', uploads: [] }).mockResolvedValueOnce({ id: 't2', status: 'ready' });
+it('returns the transfer directly when no binaries are attached (the API creates it without a draft)', async () => {
+	req.mockResolvedValueOnce({ id: 't2', status: 'ready', uploads: [] });
 	const noBinaryCtx = {
 		getNodeParameter: (n: string) => (n === 'additionalFields' ? { file_ids: 'f1', folder_ids: 'fo1' } : undefined),
 	} as never;
 	const out = await createTransfer(noBinaryCtx, 0, spec);
 	expect(req.mock.calls[0][1]).toMatchObject({ body: { files: [{ id: 'f1' }], folders: ['fo1'] } });
 	expect(req.mock.calls[0][1].body.uploads).toBeUndefined();
-	expect(req.mock.calls[1][1]).toMatchObject({ path: '/v1/transfers/t2/complete' });
+	expect(req.mock.calls).toHaveLength(1);
 	expect(out[0].json).toMatchObject({ id: 't2', status: 'ready' });
 });
 

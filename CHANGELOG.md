@@ -7,6 +7,12 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+## [0.1.5] - 2026-09-11
+
+### Fixed
+
+- Transfer → Create with only existing files or folders (no binaries) no longer fails with 404: the API creates such transfers without a draft, so the node no longer calls `/complete` for them.
+
 ## [0.1.4] - 2026-09-11
 
 ### Changed
