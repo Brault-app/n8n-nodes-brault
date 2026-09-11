@@ -8,7 +8,7 @@
  * process exits 1 when any check failed.
  *
  * Usage:
- *   source ~/.config/brault/n8n-stg.env && node scripts/smoke-stg.mjs
+ *   BRAULT_SMOKE_ENV_FILE=~/.config/brault/n8n-stg.env node scripts/smoke-stg.mjs   # or: set -a; source <env>; set +a
  * Environment:
  *   BRAULT_STG_API_KEY   API key (bsk_…) with every scope
  *   BRAULT_STG_API_BASE  central base URL, e.g. https://api.stg.brault.app

@@ -16,7 +16,7 @@
  * coverage is below the catalogue's operation count.
  *
  * Usage:
- *   source ~/.config/brault/n8n-stg.env  && node scripts/smoke-full.mjs
+ *   BRAULT_SMOKE_ENV_FILE=~/.config/brault/n8n-stg.env node scripts/smoke-full.mjs   # or: set -a; source <env>; set +a
  *   source ~/.config/brault/n8n-prod.env && node scripts/smoke-full.mjs
  * Environment:
  *   BRAULT_STG_API_KEY      API key (bsk_…) with every scope

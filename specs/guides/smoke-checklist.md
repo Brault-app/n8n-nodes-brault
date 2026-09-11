@@ -13,7 +13,7 @@ Check each box as you go. If something does not match what "What should happen" 
 stop there and report it before moving to the next step.
 
 There is also a headless alternative that runs 47 automated checks against staging:
-`source ~/.config/brault/n8n-stg.env && node scripts/smoke-stg.mjs`.
+`BRAULT_SMOKE_ENV_FILE=~/.config/brault/n8n-stg.env node scripts/smoke-stg.mjs` (a plain `source` does not export the variables to node; the harness prints the hosts it targets).
 
 ## 1. Create the credential and test it
 

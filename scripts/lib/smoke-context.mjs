@@ -7,6 +7,8 @@
  *
  * Credentials come from the environment; when a variable is missing it is read from an env
  * file (default `~/.config/brault/n8n-stg.env`, overridable with BRAULT_SMOKE_ENV_FILE).
+ * NOTE: a plain `source file` sets shell variables that node cannot see; either `set -a` before
+ * sourcing or pass the file via BRAULT_SMOKE_ENV_FILE. The harness prints the hosts it uses.
  * Sourcing an env file in the shell therefore always wins over the file on disk:
  *   source ~/.config/brault/n8n-prod.env && node scripts/smoke-full.mjs
  */
