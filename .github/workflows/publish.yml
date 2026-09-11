@@ -117,4 +117,4 @@ jobs:
           done
           npm view "n8n-nodes-brault@$VERSION" version
           npm run scan 2>&1 | tee scan.log
-          if grep -qiE "error|failed|violation|not found" scan.log; then echo "scan reported problems"; exit 1; fi
+          grep -q "has passed all security checks" scan.log || { echo "scan did not report success"; exit 1; }
