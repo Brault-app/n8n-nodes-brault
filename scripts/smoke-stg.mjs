@@ -529,7 +529,7 @@ async function main() {
 	// 6 — import from URL
 	await check('6 file.importFromUrl wait=true', async () => {
 		const params = {
-			url: 'https://brault.app/favicon.ico',
+			url: 'https://www.w3.org/Icons/w3c_home.png',
 			additionalFields: {
 				wait: true,
 				name: `smoke-import-${stamp}.ico`,
