@@ -14,336 +14,35 @@
  *   BRAULT_STG_API_BASE  central base URL, e.g. https://api.stg.brault.app
  */
 
-import { createRequire } from 'node:module';
 import { randomUUID } from 'node:crypto';
-import { Readable } from 'node:stream';
-import { deflateSync } from 'node:zlib';
-import { readFileSync, existsSync } from 'node:fs';
-import { homedir } from 'node:os';
-import { fileURLToPath } from 'node:url';
-import { join, dirname } from 'node:path';
 
-const require = createRequire(import.meta.url);
-const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
+import {
+	binaryItems,
+	createHarness,
+	createRecorder,
+	describeError,
+	loadCredentials,
+	makePng,
+	one,
+	rl,
+	sleep,
+} from './lib/smoke-context.mjs';
 
-// ---------------------------------------------------------------- credentials
+const { apiKey: API_KEY, baseUrl: BASE_URL } = loadCredentials();
 
-function loadEnvFile(path) {
-	if (!existsSync(path)) return;
-	for (const raw of readFileSync(path, 'utf8').split('\n')) {
-		const line = raw.trim();
-		if (!line || line.startsWith('#')) continue;
-		const m = /^(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)=(.*)$/.exec(line);
-		if (!m) continue;
-		let value = m[2].trim();
-		if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'")))
-			value = value.slice(1, -1);
-		if (process.env[m[1]] === undefined) process.env[m[1]] = value;
-	}
-}
+const harness = createHarness({ apiKey: API_KEY, baseUrl: BASE_URL });
+const { triggerNode, catalogue, staticData, makeCtx, run, api } = harness;
+harness.setWebhookUrl(`https://smoke.invalid/webhook/${randomUUID()}`);
 
-loadEnvFile(join(homedir(), '.config', 'brault', 'n8n-stg.env'));
+const { results, check } = createRecorder({ pauseMs: 300 });
 
-const API_KEY = process.env.BRAULT_STG_API_KEY ?? '';
-const BASE_URL = (process.env.BRAULT_STG_API_BASE ?? 'https://api.stg.brault.app').replace(/\/+$/, '');
-if (!API_KEY) {
-	console.error('Missing BRAULT_STG_API_KEY (source ~/.config/brault/n8n-stg.env first)');
-	process.exit(2);
-}
-
-// ------------------------------------------------------------- built node code
-
-const { Brault } = require(join(ROOT, 'dist/nodes/Brault/Brault.node.js'));
-const { BraultTrigger } = require(join(ROOT, 'dist/nodes/BraultTrigger/BraultTrigger.node.js'));
-const catalogue = require(join(ROOT, 'dist/nodes/Brault/catalogue/index.js'));
-
-const braultNode = new Brault();
-const triggerNode = new BraultTrigger();
-
-// ------------------------------------------------------------------ utilities
-
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const rl = (value) => ({ __rl: true, mode: 'id', value });
 const stamp = new Date().toISOString().replace(/[:.]/g, '-');
 
-function lowerHeaders(headers) {
-	const out = {};
-	headers.forEach((v, k) => {
-		out[k.toLowerCase()] = v;
-	});
-	return out;
-}
-
-async function collect(stream) {
-	const chunks = [];
-	for await (const chunk of stream) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-	return Buffer.concat(chunks);
-}
-
-/** Minimal stand-in for n8n's helpers.httpRequest / httpRequestWithAuthentication. */
-async function doFetch(options, withAuth) {
-	const url = new URL(options.url);
-	if (options.qs) {
-		for (const [k, v] of Object.entries(options.qs)) {
-			if (v === undefined || v === null) continue;
-			if (Array.isArray(v)) v.forEach((x) => url.searchParams.append(k, String(x)));
-			else url.searchParams.append(k, String(v));
-		}
-	}
-
-	const headers = {};
-	for (const [k, v] of Object.entries(options.headers ?? {})) {
-		// undici sets Content-Length itself; passing it through can be rejected by fetch.
-		if (k.toLowerCase() === 'content-length') continue;
-		headers[k] = String(v);
-	}
-	if (withAuth) headers.Authorization = `Bearer ${API_KEY}`;
-
-	const init = { method: options.method ?? 'GET', headers, redirect: 'follow' };
-	const body = options.body;
-	if (body !== undefined && body !== null && init.method !== 'GET' && init.method !== 'HEAD') {
-		if (Buffer.isBuffer(body)) {
-			init.body = body;
-		} else if (typeof body.pipe === 'function' || body instanceof Readable) {
-			init.body = Readable.toWeb(body);
-			init.duplex = 'half';
-		} else if (typeof body === 'string') {
-			init.body = body;
-		} else {
-			init.body = JSON.stringify(body);
-			if (!Object.keys(headers).some((h) => h.toLowerCase() === 'content-type'))
-				headers['Content-Type'] = 'application/json';
-		}
-	}
-
-	const res = await fetch(url, init);
-	const outHeaders = lowerHeaders(res.headers);
-
-	let data;
-	if (options.encoding === 'arraybuffer') {
-		data = Buffer.from(await res.arrayBuffer());
-	} else if (options.encoding === 'stream') {
-		data = res.body ? Readable.fromWeb(res.body) : Readable.from([]);
-	} else {
-		const text = await res.text();
-		const ct = outHeaders['content-type'] ?? '';
-		if (text === '') data = undefined;
-		else if (options.json === true || ct.includes('json')) {
-			try {
-				data = JSON.parse(text);
-			} catch {
-				data = text;
-			}
-		} else data = text;
-	}
-
-	if (!options.ignoreHttpStatusErrors && (res.status < 200 || res.status >= 300)) {
-		const preview = typeof data === 'string' ? data.slice(0, 300) : JSON.stringify(data ?? {}).slice(0, 300);
-		const err = new Error(`HTTP ${res.status} on ${init.method} ${url.origin}${url.pathname}: ${preview}`);
-		err.statusCode = res.status;
-		throw err;
-	}
-
-	if (options.returnFullResponse) return { statusCode: res.status, headers: outHeaders, body: data };
-	return data;
-}
-
-const FAKE_NODE = {
-	id: 'smoke-node',
-	name: 'Brault',
-	type: 'n8n-nodes-brault.brault',
-	typeVersion: 1,
-	position: [0, 0],
-	parameters: {},
-};
-
-const staticData = {};
-let webhookUrl = `https://smoke.invalid/webhook/${randomUUID()}`;
-
-function makeHelpers(items) {
-	return {
-		async httpRequestWithAuthentication(_name, options) {
-			return doFetch(options, true);
-		},
-		async httpRequest(options) {
-			return doFetch(options, false);
-		},
-		returnJsonArray(data) {
-			return (Array.isArray(data) ? data : [data]).map((json) => ({ json }));
-		},
-		assertBinaryData(i, property) {
-			const b = items?.[i]?.binary?.[property];
-			if (!b) throw new Error(`The item has no binary property "${property}"`);
-			return b;
-		},
-		async getBinaryDataBuffer(i, property) {
-			const b = items[i].binary[property];
-			return Buffer.from(b.data, 'base64');
-		},
-		async prepareBinaryData(source, fileName, mimeType) {
-			const buf = Buffer.isBuffer(source) ? source : await collect(source);
-			return {
-				data: buf.toString('base64'),
-				fileName,
-				mimeType: mimeType ?? 'application/octet-stream',
-				fileSize: String(buf.length),
-			};
-		},
-		async getBinaryMetadata() {
-			throw new Error('getBinaryMetadata should not be reached: smoke binaries carry no id');
-		},
-		async getBinaryStream() {
-			throw new Error('getBinaryStream should not be reached: smoke binaries carry no id');
-		},
-	};
-}
-
-function makeCtx(params, items = [{ json: {} }]) {
-	const helpers = makeHelpers(items);
-	return {
-		getInputData: () => items,
-		getNodeParameter(name, _i, fallback, opts) {
-			let v = Object.prototype.hasOwnProperty.call(params, name) ? params[name] : fallback;
-			if (opts && opts.extractValue && v && typeof v === 'object' && 'value' in v) v = v.value;
-			return v;
-		},
-		getNode: () => FAKE_NODE,
-		continueOnFail: () => false,
-		async getCredentials() {
-			return { apiKey: API_KEY, baseUrl: BASE_URL };
-		},
-		getWorkflowStaticData: () => staticData,
-		getNodeWebhookUrl: () => webhookUrl,
-		getWorkflow: () => ({ name: 'smoke' }),
-		getTimezone: () => 'UTC',
-		helpers,
-	};
-}
-
-/** Runs one catalogue operation through the real Brault.execute(). */
-async function run(resource, operation, params = {}, items) {
-	const ctx = makeCtx({ resource, operation, ...params }, items);
-	const out = await braultNode.execute.call(ctx);
-	return out[0];
-}
-
-const one = (rows) => (rows && rows.length ? rows[0].json : {});
-
-/** Direct API call, bypassing the node, for probes and cleanup. */
-async function api(method, path, { body, qs, plane = 'regional' } = {}) {
-	const base = plane === 'central' ? hosts.central : hosts.regional;
-	return doFetch(
-		{
-			method,
-			url: `${base}${path}`,
-			qs,
-			body,
-			json: true,
-			headers: { Accept: 'application/json' },
-			returnFullResponse: true,
-			ignoreHttpStatusErrors: true,
-		},
-		true,
-	);
-}
-
-function describeError(e) {
-	if (!e) return 'unknown error';
-	const parts = [String(e.message ?? e)];
-	if (e.description) parts.push(`description="${e.description}"`);
-	if (e.httpCode) parts.push(`http=${e.httpCode}`);
-	const cause = e.cause;
-	if (cause && typeof cause === 'object') {
-		const err = cause.error ?? cause;
-		const bits = [];
-		if (err.code) bits.push(`code=${err.code}`);
-		if (err.request_id) bits.push(`request_id=${err.request_id}`);
-		if (err.details) bits.push(`details=${JSON.stringify(err.details).slice(0, 200)}`);
-		if (!bits.length) bits.push(JSON.stringify(cause).slice(0, 300));
-		parts.push(`cause{${bits.join(' ')}}`);
-	}
-	return parts.join(' · ');
-}
-
-const results = [];
-async function check(name, fn) {
-	await sleep(300);
-	try {
-		const detail = await fn();
-		results.push({ name, ok: true, detail: detail ?? '' });
-		console.log(`PASS ${name}${detail ? ` — ${detail}` : ''}`);
-	} catch (e) {
-		const msg = describeError(e);
-		results.push({ name, ok: false, detail: msg });
-		console.log(`FAIL ${name}: ${msg}`);
-	}
-}
-
-// ------------------------------------------------------------------- test PNG
-
-function crc32(buf) {
-	let c;
-	const table = crc32.table ?? (crc32.table = Array.from({ length: 256 }, (_, n) => {
-		c = n;
-		for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-		return c >>> 0;
-	}));
-	let crc = 0xffffffff;
-	for (const byte of buf) crc = table[(crc ^ byte) & 0xff] ^ (crc >>> 8);
-	return (crc ^ 0xffffffff) >>> 0;
-}
-
-function chunk(type, data) {
-	const len = Buffer.alloc(4);
-	len.writeUInt32BE(data.length);
-	const body = Buffer.concat([Buffer.from(type, 'ascii'), data]);
-	const crc = Buffer.alloc(4);
-	crc.writeUInt32BE(crc32(body));
-	return Buffer.concat([len, body, crc]);
-}
-
-function makePng(size = 24) {
-	const ihdr = Buffer.alloc(13);
-	ihdr.writeUInt32BE(size, 0);
-	ihdr.writeUInt32BE(size, 4);
-	ihdr[8] = 8; // bit depth
-	ihdr[9] = 2; // colour type: truecolour
-	const raw = Buffer.alloc(size * (size * 3 + 1));
-	let o = 0;
-	for (let y = 0; y < size; y++) {
-		raw[o++] = 0; // filter: none
-		for (let x = 0; x < size; x++) {
-			raw[o++] = (x * 10) % 256;
-			raw[o++] = (y * 10) % 256;
-			raw[o++] = 0x7f;
-		}
-	}
-	return Buffer.concat([
-		Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
-		chunk('IHDR', ihdr),
-		chunk('IDAT', deflateSync(raw)),
-		chunk('IEND', Buffer.alloc(0)),
-	]);
-}
-
 const PNG = makePng(24);
-const pngItems = () => [
-	{
-		json: {},
-		binary: {
-			data: {
-				data: PNG.toString('base64'),
-				fileName: 'smoke.png',
-				mimeType: 'image/png',
-				fileSize: String(PNG.length),
-			},
-		},
-	},
-];
+const pngItems = () => binaryItems(PNG, 'smoke.png', 'image/png');
 
 // --------------------------------------------------------------------- state
 
-let hosts = { central: BASE_URL, regional: BASE_URL };
 const state = {
 	libraryId: null,
 	folderId: null,
@@ -369,15 +68,7 @@ async function main() {
 	console.log(`# central base: ${BASE_URL}`);
 
 	// Host discovery, exactly as transport/hosts.ts does it.
-	const me = await doFetch(
-		{ method: 'GET', url: `${BASE_URL}/v1/me`, json: true, returnFullResponse: true, ignoreHttpStatusErrors: true },
-		true,
-	);
-	// /v1/me answers a flat object: { object: 'me', brandspace, key, plan, limits, hosts }.
-	const meHosts = me.body?.hosts ?? me.body?.data?.hosts;
-	if (me.statusCode === 200 && meHosts?.central && meHosts?.regional) {
-		hosts = meHosts;
-	}
+	const { hosts } = await harness.discoverHosts();
 	console.log(`# hosts: central=${hosts.central} regional=${hosts.regional}`);
 
 	// 1 — brandspace
@@ -811,14 +502,14 @@ async function main() {
 			await triggerNode.webhookMethods.default.create.call(ctx);
 		} catch (e) {
 			// A `.invalid` host may be rejected by URL validation; retry on a routable host.
-			webhookUrl = `https://example.com/n8n-smoke-${randomUUID()}`;
-			console.log(`  note: retrying webhook create on ${webhookUrl} after: ${describeError(e)}`);
+			harness.setWebhookUrl(`https://example.com/n8n-smoke-${randomUUID()}`);
+			console.log(`  note: retrying webhook create on ${harness.webhookUrl} after: ${describeError(e)}`);
 			await triggerNode.webhookMethods.default.create.call(ctx);
 		}
 		if (!staticData.webhookId || !staticData.secret)
 			throw new Error(`static data missing ids: ${JSON.stringify(Object.keys(staticData))}`);
 		state.webhookId = staticData.webhookId;
-		return `webhookId=${staticData.webhookId} secret=${staticData.secret ? 'set' : 'missing'} url=${webhookUrl}`;
+		return `webhookId=${staticData.webhookId} secret=${staticData.secret ? 'set' : 'missing'} url=${harness.webhookUrl}`;
 	});
 	await check('15c trigger checkExists → true', async () => {
 		const ctx = makeCtx({});
