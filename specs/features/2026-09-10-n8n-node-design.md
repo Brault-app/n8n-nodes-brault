@@ -104,7 +104,7 @@ headers, returnFullResponse })`.
 - **Idempotency.** Every `POST` that creates something sends `Idempotency-Key: <uuid v4>`
   generated per item per execution. n8n retries (node-level "retry on fail") reuse the same
   key only inside the same execution; that is acceptable for v1 and documented.
-- **Errors.** The API error envelope (`error.code`, `error.message`, `error.request_id`,
+- **Errors.** The API error envelope is flat — `{ object: "error", status, code, message, request_id, details? }` (verified on staging 2026-09-11; single objects are also unwrapped, only lists carry `data`). Its fields (`code`, `message`, `request_id`,
   `error.details`) maps to `NodeApiError` with `message = error.message`, `description =
   "code · request_id"`. Specific codes get friendlier text:
   `webhook_limit_reached` ("Your plan allows N webhook endpoints; remove one in Settings →
