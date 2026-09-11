@@ -1,20 +1,15 @@
-/*
- * Catalogue data, not n8n INodeProperties: these ParamSpec objects only share the
- * displayName/name/type shape. catalogue/build-properties.ts turns them into real node
- * properties and always emits a `default` there.
- */
-/* eslint-disable n8n-nodes-base/node-param-default-missing */
 import { bodyParam } from '../catalogue/common-params';
 import type { ParamSpec, ResourceSpec } from '../catalogue/types';
 import { createTransfer } from './transfer-create';
 
 const transferIdParam: ParamSpec = {
-	name: 'transferId',
 	displayName: 'Transfer',
+	name: 'transferId',
 	in: 'path',
 	type: 'string',
 	required: true,
-	placeholder: 'e.g. the /d/<id> slug',
+	default: '',
+	placeholder: 'e.g. the /d/<ID> slug',
 };
 
 export const transfer: ResourceSpec = {

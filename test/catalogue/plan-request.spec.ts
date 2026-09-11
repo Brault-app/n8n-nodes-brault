@@ -10,14 +10,14 @@ const spec: OperationSpec = {
 	method: 'POST',
 	plane: 'regional',
 	path: '/v1/files/{fileId}/move',
-	params: [{ name: 'fileId', displayName: 'File', in: 'path', type: 'string', required: true, locator: 'file' }],
+	params: [{ name: 'fileId', displayName: 'File', in: 'path', type: 'string', required: true, default: '', locator: 'file' }],
 	fields: [
-		{ name: 'library_id', displayName: 'Library ID', in: 'body', type: 'string', locator: 'library' },
-		{ name: 'folder_id', displayName: 'Folder ID', in: 'body', type: 'string', locator: 'folder' },
-		{ name: 'to_root', displayName: 'To Root', in: 'body', type: 'boolean' },
-		{ name: 'tags', displayName: 'Tags', in: 'body', type: 'string', csv: true },
-		{ name: 'recursive', displayName: 'Recursive', in: 'query', type: 'boolean' },
-		{ name: 'filter', displayName: 'Filter', in: 'body', type: 'json' },
+		{ name: 'library_id', displayName: 'Library ID', in: 'body', type: 'string', default: '', locator: 'library' },
+		{ name: 'folder_id', displayName: 'Folder ID', in: 'body', type: 'string', default: '', locator: 'folder' },
+		{ name: 'to_root', displayName: 'To Root', in: 'body', type: 'boolean', default: false },
+		{ name: 'tags', displayName: 'Tags', in: 'body', type: 'string', default: '', csv: true },
+		{ name: 'recursive', displayName: 'Recursive', in: 'query', type: 'boolean', default: false },
+		{ name: 'filter', displayName: 'Filter', in: 'body', type: 'json', default: '' },
 	],
 };
 
@@ -57,8 +57,8 @@ describe('planRequest', () => {
 			...spec,
 			method: 'GET',
 			fields: [
-				{ name: 'library_id', displayName: 'Library ID', in: 'query', type: 'string', locator: 'library' },
-				{ name: 'folder_id', displayName: 'Folder ID', in: 'query', type: 'string', locator: 'folder' },
+				{ name: 'library_id', displayName: 'Library ID', in: 'query', type: 'string', default: '', locator: 'library' },
+				{ name: 'folder_id', displayName: 'Folder ID', in: 'query', type: 'string', default: '', locator: 'folder' },
 			],
 		};
 		const plan = planRequest(listSpec, { fileId: 'f1', library_id: 'lib_1', folder_id: 'fo_1' });
@@ -84,7 +84,7 @@ describe('planRequest', () => {
 	it('throws a readable message when a number field is not numeric', () => {
 		const numberSpec: OperationSpec = {
 			...spec,
-			fields: [{ name: 'width', displayName: 'Width', in: 'body', type: 'number' }],
+			fields: [{ name: 'width', displayName: 'Width', in: 'body', type: 'number', default: 0 }],
 		};
 		expect(() => planRequest(numberSpec, { fileId: 'f1', width: 'not-a-number' })).toThrow(
 			'Width must be a number',
@@ -93,7 +93,7 @@ describe('planRequest', () => {
 	it('omits a multiOptions field left unselected (empty array)', () => {
 		const multiSpec: OperationSpec = {
 			...spec,
-			fields: [{ name: 'kind', displayName: 'Kind', in: 'query', type: 'multiOptions' }],
+			fields: [{ name: 'kind', displayName: 'Kind', in: 'query', type: 'multiOptions', default: [] }],
 		};
 		const plan = planRequest(multiSpec, { fileId: 'f1', kind: [] });
 		expect(plan.qs).toEqual({});
@@ -101,7 +101,7 @@ describe('planRequest', () => {
 	it('sends a multiOptions field with a selected value', () => {
 		const multiSpec: OperationSpec = {
 			...spec,
-			fields: [{ name: 'kind', displayName: 'Kind', in: 'query', type: 'multiOptions' }],
+			fields: [{ name: 'kind', displayName: 'Kind', in: 'query', type: 'multiOptions', default: [] }],
 		};
 		const plan = planRequest(multiSpec, { fileId: 'f1', kind: ['image'] });
 		expect(plan.qs).toEqual({ kind: ['image'] });

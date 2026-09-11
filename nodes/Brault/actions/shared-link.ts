@@ -1,19 +1,14 @@
-/*
- * Catalogue data, not n8n INodeProperties: these ParamSpec objects only share the
- * displayName/name/type shape. catalogue/build-properties.ts turns them into real node
- * properties and always emits a `default` there.
- */
-/* eslint-disable n8n-nodes-base/node-param-default-missing */
 import { bodyParam } from '../catalogue/common-params';
 import type { ParamSpec, ResourceSpec } from '../catalogue/types';
 import { createSharedLink } from './shared-link-create';
 
 const sharedLinkIdParam: ParamSpec = {
-	name: 'sharedLinkId',
 	displayName: 'Shared Link',
+	name: 'sharedLinkId',
 	in: 'path',
 	type: 'string',
 	required: true,
+	default: '',
 	placeholder: 'e.g. slk_…',
 };
 

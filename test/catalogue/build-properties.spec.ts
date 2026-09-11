@@ -27,8 +27,8 @@ const resources: ResourceSpec[] = [
 				method: 'POST',
 				plane: 'regional',
 				path: '/v1/libraries',
-				params: [{ name: 'name', displayName: 'Name', in: 'body', type: 'string', required: true }],
-				fields: [{ name: 'emoji', displayName: 'Emoji', in: 'body', type: 'string' }],
+				params: [{ name: 'name', displayName: 'Name', in: 'body', type: 'string', required: true, default: '' }],
+				fields: [{ name: 'emoji', displayName: 'Emoji', in: 'body', type: 'string', default: '' }],
 			},
 			{
 				resource: 'library',
@@ -40,7 +40,7 @@ const resources: ResourceSpec[] = [
 				plane: 'regional',
 				path: '/v1/libraries/{libraryId}',
 				params: [
-					{ name: 'libraryId', displayName: 'Library', in: 'path', type: 'string', required: true, locator: 'library' },
+					{ name: 'libraryId', displayName: 'Library', in: 'path', type: 'string', required: true, default: '', locator: 'library' },
 				],
 			},
 		],
@@ -107,7 +107,7 @@ describe('buildProperties', () => {
 			path: '/v1/libraries/{libraryId}/value',
 			params: [
 				{ name: 'valueType', displayName: 'Value Type', in: 'body', type: 'options', default: 'text', options: [{ name: 'Text', value: 'text' }] },
-				{ name: 'text', displayName: 'Text', in: 'body', type: 'string', showWhen: { valueType: ['text'] } },
+				{ name: 'text', displayName: 'Text', in: 'body', type: 'string', default: '', showWhen: { valueType: ['text'] } },
 			],
 		};
 		expect(paramToProperty(op.params![1], op).displayOptions).toEqual({

@@ -15,7 +15,10 @@ export interface ParamSpec {
 	in: ParamIn;
 	type: 'string' | 'number' | 'boolean' | 'options' | 'multiOptions' | 'json' | 'dateTime';
 	required?: boolean;
-	default?: unknown;
+	/** Always present: the n8n community-package scanner flags any node-parameter-shaped
+	 * literal (displayName + name + type) that lacks one, and `build-properties.ts` needs
+	 * a real value to render anyway. */
+	default: unknown;
 	description?: string;
 	placeholder?: string;
 	options?: Array<{ name: string; value: string; description?: string }>;

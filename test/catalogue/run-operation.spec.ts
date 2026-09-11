@@ -25,7 +25,7 @@ const spec: OperationSpec = {
 	method: 'GET',
 	plane: 'regional',
 	path: '/v1/files/{fileId}/boards',
-	params: [{ name: 'fileId', displayName: 'File', in: 'path', type: 'string', required: true, locator: 'file' }],
+	params: [{ name: 'fileId', displayName: 'File', in: 'path', type: 'string', required: true, default: '', locator: 'file' }],
 };
 
 const ctx = {
@@ -128,7 +128,7 @@ describe('runOperation', () => {
 			method: 'POST',
 			plane: 'regional',
 			path: '/v1/libraries',
-			params: [{ name: 'name', displayName: 'Name', in: 'body', type: 'string', required: true }],
+			params: [{ name: 'name', displayName: 'Name', in: 'body', type: 'string', required: true, default: '' }],
 		};
 		const createCtx = {
 			getNode: () => ({ name: 'Brault' }),

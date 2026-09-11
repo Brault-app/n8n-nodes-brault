@@ -1,8 +1,3 @@
-/*
- * Catalogue data, not n8n INodeProperties: these ParamSpec objects only share the
- * displayName/name/type shape. catalogue/build-properties.ts turns them into real node
- * properties and always emits a `default` there.
- */
 import type { ResourceSpec } from '../catalogue/types';
 
 export const brandspace: ResourceSpec = {

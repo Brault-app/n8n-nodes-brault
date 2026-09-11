@@ -1,9 +1,3 @@
-/*
- * Catalogue data, not n8n INodeProperties: these ParamSpec objects only share the
- * displayName/name/type shape. catalogue/build-properties.ts turns them into real node
- * properties and always emits a `default` there.
- */
-/* eslint-disable n8n-nodes-base/node-param-default-missing */
 import type { IDataObject, IExecuteFunctions, INodeExecutionData } from 'n8n-workflow';
 import { NodeOperationError } from 'n8n-workflow';
 import type { OperationSpec, ParamSpec } from '../catalogue/types';
@@ -30,34 +24,53 @@ export const valueParams: ParamSpec[] = [
 			{ name: 'Text', value: 'text' },
 		],
 	},
-	{ name: 'text', displayName: 'Text', in: 'body', type: 'string', showWhen: { valueType: ['text'] } },
-	{ name: 'date', displayName: 'Date', in: 'body', type: 'dateTime', showWhen: { valueType: ['date'] } },
+	{ displayName: 'Text', name: 'text', in: 'body', type: 'string', default: '', showWhen: { valueType: ['text'] } },
+	{ displayName: 'Date', name: 'date', in: 'body', type: 'dateTime', default: '', showWhen: { valueType: ['date'] } },
 	{
-		name: 'checkbox',
 		displayName: 'Checked',
+		name: 'checkbox',
 		in: 'body',
 		type: 'boolean',
+		default: false,
 		showWhen: { valueType: ['checkbox'] },
 		description: 'Whether the checkbox is checked',
 	},
 	{
-		name: 'user_id',
 		displayName: 'User ID',
+		name: 'user_id',
 		in: 'body',
 		type: 'string',
+		default: '',
 		placeholder: 'e.g. usr_… (Member → Get Many)',
 		showWhen: { valueType: ['person'] },
 	},
 	{
-		name: 'option_id',
 		displayName: 'Option ID',
+		name: 'option_id',
 		in: 'body',
 		type: 'string',
+		default: '',
 		description: 'Option to set (Board Property / Property → Get shows the options)',
 		showWhen: { valueType: ['status'] },
 	},
-	{ name: 'add', displayName: 'Add Option IDs', in: 'body', type: 'string', csv: true, showWhen: { valueType: ['tags'] } },
-	{ name: 'remove', displayName: 'Remove Option IDs', in: 'body', type: 'string', csv: true, showWhen: { valueType: ['tags'] } },
+	{
+		displayName: 'Add Option IDs',
+		name: 'add',
+		in: 'body',
+		type: 'string',
+		default: '',
+		csv: true,
+		showWhen: { valueType: ['tags'] },
+	},
+	{
+		displayName: 'Remove Option IDs',
+		name: 'remove',
+		in: 'body',
+		type: 'string',
+		default: '',
+		csv: true,
+		showWhen: { valueType: ['tags'] },
+	},
 	{
 		displayName: 'Property Type To Clear',
 		name: 'clearType',

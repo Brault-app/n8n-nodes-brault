@@ -1,9 +1,3 @@
-/*
- * Catalogue data, not n8n INodeProperties: these ParamSpec objects only share the
- * displayName/name/type shape. catalogue/build-properties.ts turns them into real node
- * properties and always emits a `default` there.
- */
-/* eslint-disable n8n-nodes-base/node-param-default-missing */
 import { bodyParam, folderLocator, libraryLocator, pathLocator, queryParam } from '../catalogue/common-params';
 import type { ResourceSpec } from '../catalogue/types';
 import { deleteWithTrash } from './delete-with-trash';
@@ -331,7 +325,7 @@ export const file: ResourceSpec = {
 			path: '/v1/files/{fileId}/versions/{versionId}/activate',
 			params: [
 				pathLocator('fileId', 'File', 'file'),
-				{ name: 'versionId', displayName: 'Version', in: 'path', type: 'string', required: true, placeholder: 'e.g. ver_…' },
+				{ displayName: 'Version', name: 'versionId', in: 'path', type: 'string', required: true, default: '', placeholder: 'e.g. ver_…' },
 			],
 		},
 		{
@@ -345,7 +339,7 @@ export const file: ResourceSpec = {
 			path: '/v1/files/{fileId}/versions/{versionId}',
 			params: [
 				pathLocator('fileId', 'File', 'file'),
-				{ name: 'versionId', displayName: 'Version', in: 'path', type: 'string', required: true, placeholder: 'e.g. ver_…' },
+				{ displayName: 'Version', name: 'versionId', in: 'path', type: 'string', required: true, default: '', placeholder: 'e.g. ver_…' },
 			],
 		},
 	],

@@ -1,8 +1,3 @@
-/*
- * Catalogue data, not n8n INodeProperties: these ParamSpec objects only share the
- * displayName/name/type shape. catalogue/build-properties.ts turns them into real node
- * properties and always emits a `default` there.
- */
 import { bodyParam, folderLocator, libraryLocator, pathLocator, queryParam } from '../catalogue/common-params';
 import type { ResourceSpec } from '../catalogue/types';
 import { deleteWithTrash } from './delete-with-trash';

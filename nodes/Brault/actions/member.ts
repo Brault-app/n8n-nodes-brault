@@ -1,17 +1,12 @@
-/*
- * Catalogue data, not n8n INodeProperties: these ParamSpec objects only share the
- * displayName/name/type shape. catalogue/build-properties.ts turns them into real node
- * properties and always emits a `default` there.
- */
-/* eslint-disable n8n-nodes-base/node-param-default-missing */
 import type { ParamSpec, ResourceSpec } from '../catalogue/types';
 
 const userIdParam: ParamSpec = {
-	name: 'userId',
 	displayName: 'User',
+	name: 'userId',
 	in: 'path',
 	type: 'string',
 	required: true,
+	default: '',
 	placeholder: 'e.g. usr_…',
 };
 

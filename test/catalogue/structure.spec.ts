@@ -85,6 +85,39 @@ describe('catalogue structure', () => {
 					}
 				}
 			});
+
+			// n8n's community-package scanner (`@n8n/scan-community-package`) runs its own
+			// strict eslint-plugin-n8n-nodes-base config against the published source and
+			// ignores our inline eslint-disable comments, so every param/field literal must
+			// carry an explicit `default` whose type matches its declared `type` (see
+			// catalogue/common-params.ts and specs/plans/2026-09-10-n8n-node.md step "scanner
+			// fix"). This guards the whole catalogue, not just the object literals that used
+			// to be exempted.
+			it(`${r.value}: every param/field declares an explicit default whose type matches its declared type`, () => {
+				for (const op of r.operations) {
+					for (const p of [...(op.params ?? []), ...(op.fields ?? [])]) {
+						expect(p.default).not.toBeUndefined();
+						switch (p.type) {
+							case 'boolean':
+								expect(typeof p.default).toBe('boolean');
+								break;
+							case 'number':
+								expect(typeof p.default).toBe('number');
+								break;
+							case 'multiOptions':
+								expect(Array.isArray(p.default)).toBe(true);
+								break;
+							case 'options':
+								expect(p.options?.some((o) => o.value === p.default)).toBe(true);
+								break;
+							default:
+								// string, dateTime, json, and locator params (always typed
+								// 'string' here) all default to ''.
+								expect(typeof p.default).toBe('string');
+						}
+					}
+				}
+			});
 		}
 	});
 });

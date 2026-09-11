@@ -1,9 +1,3 @@
-/*
- * Catalogue data, not n8n INodeProperties: these ParamSpec objects only share the
- * displayName/name/type shape. catalogue/build-properties.ts turns them into real node
- * properties and always emits a `default` there.
- */
-/* eslint-disable n8n-nodes-base/node-param-default-missing */
 import type { ResourceSpec } from '../catalogue/types';
 
 export const library: ResourceSpec = {
@@ -32,7 +26,15 @@ export const library: ResourceSpec = {
 			plane: 'regional',
 			path: '/v1/libraries/{libraryId}',
 			params: [
-				{ name: 'libraryId', displayName: 'Library', in: 'path', type: 'string', required: true, locator: 'library' },
+				{
+					displayName: 'Library',
+					name: 'libraryId',
+					in: 'path',
+					type: 'string',
+					required: true,
+					default: '',
+					locator: 'library',
+				},
 			],
 		},
 		{
@@ -46,17 +48,18 @@ export const library: ResourceSpec = {
 			path: '/v1/libraries',
 			params: [
 				{
-					name: 'name',
 					displayName: 'Name',
+					name: 'name',
 					in: 'body',
 					type: 'string',
 					required: true,
+					default: '',
 					placeholder: 'e.g. Brand assets',
 				},
 			],
 			fields: [
-				{ name: 'description', displayName: 'Description', in: 'body', type: 'string' },
-				{ name: 'emoji', displayName: 'Emoji', in: 'body', type: 'string', placeholder: 'e.g. 📁' },
+				{ displayName: 'Description', name: 'description', in: 'body', type: 'string', default: '' },
+				{ displayName: 'Emoji', name: 'emoji', in: 'body', type: 'string', default: '', placeholder: 'e.g. 📁' },
 			],
 		},
 		{
@@ -69,11 +72,19 @@ export const library: ResourceSpec = {
 			plane: 'regional',
 			path: '/v1/libraries/{libraryId}',
 			params: [
-				{ name: 'libraryId', displayName: 'Library', in: 'path', type: 'string', required: true, locator: 'library' },
+				{
+					displayName: 'Library',
+					name: 'libraryId',
+					in: 'path',
+					type: 'string',
+					required: true,
+					default: '',
+					locator: 'library',
+				},
 			],
 			fields: [
-				{ name: 'name', displayName: 'Name', in: 'body', type: 'string' },
-				{ name: 'description', displayName: 'Description', in: 'body', type: 'string' },
+				{ displayName: 'Name', name: 'name', in: 'body', type: 'string', default: '' },
+				{ displayName: 'Description', name: 'description', in: 'body', type: 'string', default: '' },
 			],
 		},
 		{
@@ -86,7 +97,15 @@ export const library: ResourceSpec = {
 			plane: 'regional',
 			path: '/v1/libraries/{libraryId}',
 			params: [
-				{ name: 'libraryId', displayName: 'Library', in: 'path', type: 'string', required: true, locator: 'library' },
+				{
+					displayName: 'Library',
+					name: 'libraryId',
+					in: 'path',
+					type: 'string',
+					required: true,
+					default: '',
+					locator: 'library',
+				},
 			],
 		},
 	],
