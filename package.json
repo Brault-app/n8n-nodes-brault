@@ -19,7 +19,7 @@
     "release": "n8n-node release",
     "prepublishOnly": "n8n-node prerelease"
   },
-  "files": ["dist"],
+  "files": ["dist", "CHANGELOG.md"],
   "n8n": {
     "n8nNodesApiVersion": 1,
     "strict": true,

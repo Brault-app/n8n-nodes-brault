@@ -22,6 +22,8 @@ comments, review links and transfers against the [Brault Public API](https://dev
 - **Search** — free-text search across a brandspace.
 - **Use it as a tool for n8n AI agents** — the `Brault` node is exposed with
   `usableAsTool: true`, so an AI Agent node can call any of its operations directly.
+  Self-hosted instances need `N8N_COMMUNITY_PACKAGES_ALLOW_TOOL_USAGE=true` to use
+  community nodes as tools.
 
 ## Install
 
@@ -29,7 +31,8 @@ comments, review links and transfers against the [Brault Public API](https://dev
 Once the package passes n8n's verification, it also appears directly in the nodes panel
 search.
 
-Requires n8n **1.80** or later.
+Tested with n8n **2.x** (community-node verified install); older 1.x versions may work
+but are untested.
 
 ```bash
 npm install n8n-nodes-brault
@@ -103,12 +106,12 @@ Covers nearly every `/v1` resource, 17 resources and 92 operations in total:
 | --- | --- |
 | Library | Get Many, Get, Create, Update, Delete |
 | Folder | Get Many, Get, Create, Update, Move, Delete, Restore |
-| File | Get Many, Get, Update, Move, Copy, Delete, Restore, Get Download URL, Download, Get Similar, Get Boards, Set Property Value, Import From URL, Upload, Get Versions, Activate Version, Delete Version |
+| File | Get Many, Get, Update, Move, Copy, Delete, Restore, Get Download URL, Download, Get Many Similar, Get Many Boards, Set Property Value, Import From URL, Upload, Get Many Versions, Activate Version, Delete Version |
 | Import | Get |
 | Search | Search |
 | Comment | Get Many, Get, Create, Update, Delete, Resolve, Reopen |
 | Reply | Get Many, Create, Update, Delete |
-| Board | Get Many, Get, Create, Update, Delete, Query, Add Files, Remove File, Set File Property, Get Members |
+| Board | Get Many, Get, Create, Update, Delete, Query, Add Files, Remove File, Set File Property, Get Many Members |
 | Board Property | Get Many, Get, Create, Update, Delete, Add Option, Update Option, Delete Option |
 | Property | Get Many, Get, Create, Update, Delete, Add Option, Update Option, Delete Option |
 | Page | Get Many, Get, Create, Delete, Publish, Unpublish, Append Blocks |
@@ -157,7 +160,9 @@ npm run dev     # starts a local n8n instance with this package linked
 npm test        # jest unit tests
 npm run lint    # n8n-node lint (no --fix)
 npm run build   # n8n-node build
-npm run scan    # packs the tarball and runs @n8n/scan-community-package against it
+npm run scan    # runs @n8n/scan-community-package against the published package
+                # (post-release only; the scanner has no local-tarball mode);
+                # publish.yml runs it right after the release
 npm run release # lints, builds, bumps the version, updates CHANGELOG.md, tags, pushes
 ```
 

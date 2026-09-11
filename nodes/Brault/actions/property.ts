@@ -73,7 +73,7 @@ export const property: ResourceSpec = {
 			],
 			fields: [
 				bodyParam('selection_mode', 'Selection Mode', 'options', {
-					default: 'single',
+					default: 'multiple',
 					description: 'Whether a tag property allows one or multiple selected options',
 					options: SELECTION_MODES,
 				}),
@@ -92,7 +92,7 @@ export const property: ResourceSpec = {
 			fields: [
 				bodyParam('name', 'Name', 'string'),
 				bodyParam('selection_mode', 'Selection Mode', 'options', {
-					default: 'single',
+					default: 'multiple',
 					description: 'Whether a tag property allows one or multiple selected options',
 					options: SELECTION_MODES,
 				}),
@@ -134,7 +134,7 @@ export const property: ResourceSpec = {
 			fields: [
 				bodyParam('label', 'Label', 'string'),
 				bodyParam('color', 'Color', 'string'),
-				bodyParam('hidden', 'Hidden', 'boolean'),
+				bodyParam('hidden', 'Hidden', 'boolean', { description: 'Whether to hide the option from pickers' }),
 			],
 		},
 		{

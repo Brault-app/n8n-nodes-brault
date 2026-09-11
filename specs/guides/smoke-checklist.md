@@ -1,6 +1,6 @@
 # Checklist de humo manual (operador)
 
-Nueve pasos para probar el paquete `n8n-nodes-brault` contra `stg` antes de un release o
+Doce pasos para probar el paquete `n8n-nodes-brault` contra `stg` antes de un release o
 una promoción. Se ejecuta con `npm run dev` (arranca una instancia local de n8n con el
 paquete cargado) contra:
 
@@ -71,14 +71,14 @@ web de stg.
 **Qué debe pasar:** el comentario aparece en el panel de comentarios del fichero, con el
 texto exacto que pusiste en el nodo.
 
-## 8. Shared Link → Create con `review` y abrir la URL
+## 8. Shared Link → Create con `Acceso: review` y abrir la URL
 
-**Qué hacer:** en un nodo `Brault`, recurso **Shared Link**, operación **Create**, tipo
-`review`, sobre un fichero o carpeta existente. Copia la URL que devuelve y ábrela en una
-ventana nueva (o de incógnito).
+**Qué hacer:** en un nodo `Brault`, recurso **Shared Link**, operación **Create**, Target
+Type **File**, y **Acceso** (`access`) en `review`, sobre un fichero existente. Copia la
+URL que devuelve y ábrela en una ventana nueva (o de incógnito).
 
-**Qué debe pasar:** la URL abre la vista de revisión pública del fichero/carpeta, sin
-pedir login.
+**Qué debe pasar:** la URL abre la vista de revisión pública del fichero, sin pedir
+login.
 
 ## 9. Transfer → Create con un fichero existente y un binario
 
@@ -88,3 +88,30 @@ anterior tipo Read/Write Files). Copia la URL del transfer que devuelve y ábrel
 
 **Qué debe pasar:** la página del transfer muestra los dos ficheros — el que ya existía
 en Brault y el que subiste como binario — y ambos se pueden descargar desde ahí.
+
+## 10. File → Upload eligiendo Library Y Folder desde los desplegables
+
+**Qué hacer:** en un nodo `Brault`, recurso **File**, operación **Upload**, abre
+**Additional Fields** y elige tanto **Library** como **Folder** usando el selector
+"From list" (el desplegable, no "By ID" a mano). Ejecuta el nodo con un campo binario
+válido.
+
+**Qué debe pasar:** el nodo termina sin error 400 y el fichero aparece en la carpeta
+exacta que elegiste en el desplegable, no en la raíz de la library ni en otra carpeta.
+
+## 11. File → Download a un campo binario
+
+**Qué hacer:** en un nodo `Brault`, recurso **File**, operación **Download**, con el
+`fileId` de un fichero existente. Deja **Output Binary Field** en `data`.
+
+**Qué debe pasar:** el item de salida trae un campo binario `data` con el contenido del
+fichero; ábrelo con un nodo **Read/Write Files from Disk** o descárgalo desde el panel de
+n8n y confirma que el fichero abre correctamente.
+
+## 12. Board → Query
+
+**Qué hacer:** en un nodo `Brault`, recurso **Board**, operación **Query**, sobre un
+board existente con al menos un fichero.
+
+**Qué debe pasar:** el nodo devuelve los ficheros del board que cumplen el filtro (o
+todos, si no pusiste filtro), sin error.

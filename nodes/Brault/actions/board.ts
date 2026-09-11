@@ -180,8 +180,8 @@ export const board: ResourceSpec = {
 		{
 			resource: 'board',
 			operation: 'getMembers',
-			name: 'Get Members',
-			action: 'Get the members of a board',
+			name: 'Get Many Members',
+			action: 'Get many members of a board',
 			description: 'List the members who have access to a board',
 			method: 'GET',
 			plane: 'regional',

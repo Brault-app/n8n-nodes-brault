@@ -131,7 +131,7 @@ export const boardProperty: ResourceSpec = {
 			fields: [
 				bodyParam('label', 'Label', 'string'),
 				bodyParam('color', 'Color', 'string'),
-				bodyParam('hidden', 'Hidden', 'boolean'),
+				bodyParam('hidden', 'Hidden', 'boolean', { description: 'Whether to hide the option from pickers' }),
 			],
 		},
 		{

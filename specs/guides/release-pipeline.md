@@ -49,15 +49,23 @@ Before calling a change complete, run it against a real n8n instance and real st
    commits the version bump, tags the commit, and pushes both the commit and the tag.
 3. The pushed tag matches `.github/workflows/publish.yml`'s trigger
    (`*.*.*` — bare semver, no `v` prefix). That workflow checks out the tag, runs
-   `npm ci`, and runs `npm run release` again inside CI, which publishes to npm with
-   `--provenance --access public`.
-4. **First publish only** — the operator must configure npm Trusted Publishing before
-   any tag push will succeed:
-   - npmjs.com → the package's settings → "Publish access" → "Trusted Publishers" →
-     add a publisher: GitHub Actions, repository `Brault-app/n8n-nodes-brault`,
-     workflow `publish.yml`, no environment.
-   - Fallback: a granular `NPM_TOKEN` repo secret scoped to this package with
-     read/write publish permission, in place of Trusted Publishing.
+   `npm ci`, and runs `npm run release` again inside CI: `release-it` runs `npm publish`
+   with `NPM_CONFIG_PROVENANCE=true`. `n8n-nodes-brault` is unscoped, and unscoped
+   packages are public on npm by default, so no `--access public` flag is needed.
+4. **First release only** — npm Trusted Publishing can only be configured for a package
+   that already exists on the registry, so the very first publish cannot use it:
+   1. Publish `0.1.0` with a granular `NPM_TOKEN` repo secret (`publish.yml`'s
+      Option B) — generate the token on npmjs.com (Access Tokens → Generate New
+      Token → Granular Access Token, scoped to this package with read/write publish
+      permission) and add it as the `NPM_TOKEN` secret in this repo's
+      Settings → Secrets and variables → Actions.
+   2. Once `n8n-nodes-brault` exists on npm, the operator adds the Trusted Publisher:
+      npmjs.com → the package's settings → "Publish access" → "Trusted Publishers" →
+      add a publisher: GitHub Actions, repository `Brault-app/n8n-nodes-brault`,
+      workflow `publish.yml`, no environment.
+   3. Once the Trusted Publisher is verified working on a subsequent release, the
+      operator removes the `NPM_TOKEN` secret — Trusted Publishing (Option A) takes
+      over and no long-lived token remains in the repo.
 5. After a successful publish, the operator submits the package through the n8n
    Creator Portal so it becomes discoverable inside n8n's node panel. This step is
    manual and outside this repo.

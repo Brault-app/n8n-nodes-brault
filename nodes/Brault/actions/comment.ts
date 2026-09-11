@@ -34,7 +34,7 @@ export const comment: ResourceSpec = {
 			params: [pathLocator('fileId', 'File', 'file')],
 			fields: [
 				queryParam('resolved', 'Resolved', 'boolean', {
-					description: 'Only return comments with this resolved status',
+					description: 'Whether to return only resolved comments',
 				}),
 				queryParam('version_id', 'Version ID', 'string', {
 					description: 'Only return comments left on this file version',

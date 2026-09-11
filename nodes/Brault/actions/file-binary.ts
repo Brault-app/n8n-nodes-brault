@@ -1,4 +1,5 @@
 import type { IDataObject, IExecuteFunctions, INodeExecutionData } from 'n8n-workflow';
+import { coerce } from '../catalogue/plan-request';
 import type { OperationSpec } from '../catalogue/types';
 import { braultRequest } from '../transport/request';
 import { downloadToBinary, readBinarySource, uploadWithSession, type UploadSession } from '../transport/binary';
@@ -8,11 +9,12 @@ import { readValues, toItems } from './run-operation';
  * completion (single PUT or multipart), and returns the created file/version. */
 export async function uploadFile(ctx: IExecuteFunctions, i: number, spec: OperationSpec): Promise<INodeExecutionData[]> {
 	const v = readValues(ctx, i, spec);
+	for (const p of [...(spec.params ?? []), ...(spec.fields ?? [])]) v[p.name] = coerce(p, v[p.name]);
 	const property = String(v.binaryProperty ?? 'data');
 	const { source, size, fileName, mimeType } = await readBinarySource(ctx, i, property);
 	const body: IDataObject = { name: String(v.name || fileName), size };
 	for (const k of ['library_id', 'folder_id', 'file_id'])
-		if (v[k] !== undefined && v[k] !== '') body[k] = v[k] as IDataObject[string];
+		if (v[k] !== undefined) body[k] = v[k] as IDataObject[string];
 	const session = await braultRequest<UploadSession>(ctx, { plane: 'regional', method: 'POST', path: '/v1/uploads', body, idempotent: true });
 	const file = await uploadWithSession(
 		ctx,
@@ -32,6 +34,7 @@ export async function uploadFile(ctx: IExecuteFunctions, i: number, spec: Operat
  * file's metadata, then downloads the bytes into a binary property. */
 export async function downloadFile(ctx: IExecuteFunctions, i: number, spec: OperationSpec): Promise<INodeExecutionData[]> {
 	const v = readValues(ctx, i, spec);
+	for (const p of [...(spec.params ?? []), ...(spec.fields ?? [])]) v[p.name] = coerce(p, v[p.name]);
 	const fileId = String(v.fileId);
 	const rendition = String(v.rendition ?? 'original');
 	const link = await braultRequest<{ url: string; file_id: string; rendition: string }>(ctx, {

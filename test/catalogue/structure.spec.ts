@@ -54,6 +54,37 @@ describe('catalogue structure', () => {
 					}
 				}
 			});
+
+			it(`${r.value}: every boolean param/field has a description starting with "Whether"`, () => {
+				for (const op of r.operations) {
+					for (const p of [...(op.params ?? []), ...(op.fields ?? [])]) {
+						if (p.type !== 'boolean') continue;
+						expect(p.description).toBeDefined();
+						expect(p.description).toMatch(/^Whether/);
+					}
+				}
+			});
+
+			it(`${r.value}: no param/field description ends with a period`, () => {
+				for (const op of r.operations) {
+					for (const p of [...(op.params ?? []), ...(op.fields ?? [])]) {
+						if (!p.description) continue;
+						expect(p.description.endsWith('.')).toBe(false);
+					}
+				}
+			});
+
+			it(`${r.value}: no description, name, action, or displayName contains an em dash or en dash`, () => {
+				for (const op of r.operations) {
+					expect(op.name).not.toMatch(/[—–]/);
+					expect(op.action).not.toMatch(/[—–]/);
+					expect(op.description).not.toMatch(/[—–]/);
+					for (const p of [...(op.params ?? []), ...(op.fields ?? [])]) {
+						expect(p.displayName).not.toMatch(/[—–]/);
+						if (p.description) expect(p.description).not.toMatch(/[—–]/);
+					}
+				}
+			});
 		}
 	});
 });

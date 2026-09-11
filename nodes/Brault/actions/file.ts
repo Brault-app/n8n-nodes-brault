@@ -208,8 +208,8 @@ export const file: ResourceSpec = {
 		{
 			resource: 'file',
 			operation: 'getSimilar',
-			name: 'Get Similar',
-			action: 'Get files similar to a file',
+			name: 'Get Many Similar',
+			action: 'Get many files similar to a file',
 			description: 'List files that are visually similar to the given file',
 			method: 'GET',
 			plane: 'regional',
@@ -220,8 +220,8 @@ export const file: ResourceSpec = {
 		{
 			resource: 'file',
 			operation: 'getBoards',
-			name: 'Get Boards',
-			action: 'Get the boards a file belongs to',
+			name: 'Get Many Boards',
+			action: 'Get many boards a file belongs to',
 			description: 'List every board that includes the given file',
 			method: 'GET',
 			plane: 'regional',
@@ -297,8 +297,8 @@ export const file: ResourceSpec = {
 		{
 			resource: 'file',
 			operation: 'getVersions',
-			name: 'Get Versions',
-			action: 'Get the versions of a file',
+			name: 'Get Many Versions',
+			action: 'Get many versions of a file',
 			description: 'List every version of the given file',
 			method: 'GET',
 			plane: 'regional',

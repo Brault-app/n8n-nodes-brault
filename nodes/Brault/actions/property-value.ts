@@ -32,7 +32,14 @@ export const valueParams: ParamSpec[] = [
 	},
 	{ name: 'text', displayName: 'Text', in: 'body', type: 'string', showWhen: { valueType: ['text'] } },
 	{ name: 'date', displayName: 'Date', in: 'body', type: 'dateTime', showWhen: { valueType: ['date'] } },
-	{ name: 'checkbox', displayName: 'Checked', in: 'body', type: 'boolean', showWhen: { valueType: ['checkbox'] } },
+	{
+		name: 'checkbox',
+		displayName: 'Checked',
+		in: 'body',
+		type: 'boolean',
+		showWhen: { valueType: ['checkbox'] },
+		description: 'Whether the checkbox is checked',
+	},
 	{
 		name: 'user_id',
 		displayName: 'User ID',
@@ -59,7 +66,7 @@ export const valueParams: ParamSpec[] = [
 		default: 'text',
 		showWhen: { valueType: ['clear'] },
 		description:
-			'Status applies to board properties only. Tag properties have no null form — clear them by removing their options with "Tags" instead.',
+			'Status applies to board properties only; tag properties have no null form, so clear them by removing their options with Tags',
 		options: [
 			{ name: 'Checkbox', value: 'checkbox' },
 			{ name: 'Date', value: 'date' },
