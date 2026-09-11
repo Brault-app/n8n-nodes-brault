@@ -7,6 +7,12 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+## [0.1.3] - 2026-09-11
+
+### Fixed
+
+- Dark-theme icons use the official Brault negative mark (white frame and mark).
+
 ## [0.1.2] - 2026-09-11
 
 ### Fixed

@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-brault",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Brault node for n8n: automate your digital asset library with the Brault Public API (files, folders, boards, comments, review links, transfers, webhooks).",
   "license": "MIT",
   "homepage": "https://developers.brault.app",
