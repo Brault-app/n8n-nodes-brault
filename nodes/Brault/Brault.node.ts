@@ -10,7 +10,7 @@ export class Brault implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Brault',
 		name: 'brault',
-		icon: { light: 'file:brault.svg', dark: 'file:brault.dark.svg' },
+		icon: 'file:brault.svg',
 		group: ['transform'],
 		version: 1,
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',

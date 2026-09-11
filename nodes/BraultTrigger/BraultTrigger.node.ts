@@ -21,7 +21,7 @@ export class BraultTrigger implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Brault Trigger',
 		name: 'braultTrigger',
-		icon: { light: 'file:brault.svg', dark: 'file:brault.dark.svg' },
+		icon: 'file:brault.svg',
 		group: ['trigger'],
 		version: 1,
 		subtitle: '={{$parameter["events"].join(", ")}}',

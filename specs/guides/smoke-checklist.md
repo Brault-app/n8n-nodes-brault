@@ -1,117 +1,123 @@
-# Checklist de humo manual (operador)
+# Manual smoke checklist (operator)
 
-Doce pasos para probar el paquete `n8n-nodes-brault` contra `stg` antes de un release o
-una promoción. Se ejecuta con `npm run dev` (arranca una instancia local de n8n con el
-paquete cargado) contra:
+Twelve steps to test the `n8n-nodes-brault` package against `stg` before a release or a
+promotion. Run it with `npm run dev` (starts a local n8n instance with the package
+loaded) against:
 
 - **Base URL:** `https://api.stg.brault.app`
-- **API Key:** la que te dio el equipo para `stg`. No la escribas en este archivo, ni en
-  un nodo del workflow que vayas a exportar, ni en un commit — solo va en el campo **API
-  Key** de la credencial `Brault API` dentro de n8n.
+- **API Key:** the one the team gave you for `stg`. Do not write it into this file, nor
+  into a node of the workflow you are going to export, nor into a commit — it only goes
+  in the **API Key** field of the `Brault API` credential inside n8n.
 
-Marca cada casilla según avances. Si algo no pasa lo que dice "Qué debe pasar", para ahí
-y repórtalo antes de seguir con el siguiente paso.
+Check each box as you go. If something does not match what "What should happen" says,
+stop there and report it before moving to the next step.
 
-## 1. Crear la credencial y probarla
+There is also a headless alternative that runs 47 automated checks against staging:
+`source ~/.config/brault/n8n-stg.env && node scripts/smoke-stg.mjs`.
 
-**Qué hacer:** en n8n, crea una credencial `Brault API` con la key de stg y la base URL
-de arriba. Usa el botón de prueba de la propia credencial.
+## 1. Create the credential and test it
 
-**Qué debe pasar:** la prueba responde OK (verde). Si responde error, revisa que la key
-no tenga espacios de más y que la base URL sea exactamente `https://api.stg.brault.app`.
+**What to do:** in n8n, create a `Brault API` credential with the stg key and the base
+URL above. Use the credential's own test button.
 
-## 2. Trigger con `file.created`
+**What should happen:** the test responds OK (green). If it responds with an error,
+check that the key does not have extra spaces and that the base URL is exactly
+`https://api.stg.brault.app`.
 
-**Qué hacer:** crea un workflow nuevo con un nodo `Brault Trigger`, evento
-`file.created`, y actívalo. Luego, en la web de stg, sube un fichero cualquiera a una
-librería.
+## 2. Trigger with `file.created`
 
-**Qué debe pasar:** en unos segundos aparece una ejecución nueva del workflow en n8n, con
-un item que trae los datos del fichero que acabas de subir (nombre, id, etc.).
+**What to do:** create a new workflow with a `Brault Trigger` node, event
+`file.created`, and activate it. Then, on the stg website, upload any file to a
+library.
 
-## 3. Desactivar el workflow y comprobar que el endpoint desaparece
+**What should happen:** within a few seconds, a new execution of the workflow appears
+in n8n, with an item carrying the data of the file you just uploaded (name, id, etc.).
 
-**Qué hacer:** desactiva el workflow del paso 2. Luego, en la web de stg, ve a
+## 3. Deactivate the workflow and confirm the endpoint disappears
+
+**What to do:** deactivate the workflow from step 2. Then, on the stg website, go to
 **Settings → Developers → Webhooks**.
 
-**Qué debe pasar:** el endpoint que n8n creó (nombre `n8n · <nombre del workflow>`) ya no
-aparece en la lista.
+**What should happen:** the endpoint that n8n created (named `n8n · <workflow name>`)
+no longer appears in the list.
 
-## 4. File → Get Many con Return All
+## 4. File → Get Many with Return All
 
-**Qué hacer:** en un workflow, añade un nodo `Brault`, recurso **File**, operación
-**Get Many**, y activa la opción **Return All**.
+**What to do:** in a workflow, add a `Brault` node, resource **File**, operation
+**Get Many**, and enable the **Return All** option.
 
-**Qué debe pasar:** el nodo devuelve todos los ficheros de la librería/carpeta elegida,
-no solo la primera página (compara el número de items con lo que ves en la web).
+**What should happen:** the node returns all the files in the chosen library/folder,
+not just the first page (compare the item count with what you see on the website).
 
-## 5. File → Upload desde Read/Write Files
+## 5. File → Upload from Read/Write Files
 
-**Qué hacer:** encadena un nodo **Read/Write Files from Disk** (o similar) con un nodo
-`Brault`, recurso **File**, operación **Upload**, apuntando al campo binario que produjo
-el nodo anterior.
+**What to do:** chain a **Read/Write Files from Disk** node (or similar) with a
+`Brault` node, resource **File**, operation **Upload**, pointing at the binary field
+produced by the previous node.
 
-**Qué debe pasar:** el nodo termina sin error y devuelve el fichero creado; lo ves
-aparecer en la librería de destino en la web de stg.
+**What should happen:** the node finishes without error and returns the created file;
+you see it appear in the destination library on the stg website.
 
-## 6. File → Import From URL con Wait
+## 6. File → Import From URL with Wait
 
-**Qué hacer:** en un nodo `Brault`, recurso **File**, operación **Import From URL**, pon
-una URL pública de un fichero cualquiera y activa **Wait For Completion**.
+**What to do:** in a `Brault` node, resource **File**, operation **Import From URL**,
+enter a public URL of any file and enable **Wait For Completion**.
 
-**Qué debe pasar:** el nodo espera hasta que termine la importación y devuelve el fichero
-ya creado (no un import todavía en `queued` o `processing`).
+**What should happen:** the node waits until the import finishes and returns the
+already-created file (not an import still in `queued` or `processing`).
 
-## 7. Comment → Create y verlo en la web
+## 7. Comment → Create and see it on the website
 
-**Qué hacer:** en un nodo `Brault`, recurso **Comment**, operación **Create**, sobre un
-fichero existente, escribe un texto de prueba y ejecútalo. Luego abre ese fichero en la
-web de stg.
+**What to do:** in a `Brault` node, resource **Comment**, operation **Create**, on an
+existing file, write a test comment and run it. Then open that file on the stg
+website.
 
-**Qué debe pasar:** el comentario aparece en el panel de comentarios del fichero, con el
-texto exacto que pusiste en el nodo.
+**What should happen:** the comment appears in the file's comment panel, with the
+exact text you put in the node.
 
-## 8. Shared Link → Create con `Acceso: review` y abrir la URL
+## 8. Shared Link → Create with `Access: review` and open the URL
 
-**Qué hacer:** en un nodo `Brault`, recurso **Shared Link**, operación **Create**, Target
-Type **File**, y **Acceso** (`access`) en `review`, sobre un fichero existente. Copia la
-URL que devuelve y ábrela en una ventana nueva (o de incógnito).
+**What to do:** in a `Brault` node, resource **Shared Link**, operation **Create**,
+Target Type **File**, and **Access** (`access`) set to `review`, on an existing file.
+Copy the returned URL and open it in a new window (or an incognito one).
 
-**Qué debe pasar:** la URL abre la vista de revisión pública del fichero, sin pedir
-login.
+**What should happen:** the URL opens the file's public review view, without asking
+for a login.
 
-## 9. Transfer → Create con un fichero existente y un binario
+## 9. Transfer → Create with an existing file and a binary
 
-**Qué hacer:** en un nodo `Brault`, recurso **Transfer**, operación **Create**, añade a
-la vez un `file_id` de un fichero que ya existe en Brault y un campo binario (de un nodo
-anterior tipo Read/Write Files). Copia la URL del transfer que devuelve y ábrela.
+**What to do:** in a `Brault` node, resource **Transfer**, operation **Create**, add
+at the same time a `file_id` of a file that already exists in Brault and a binary
+field (from a previous node such as Read/Write Files). Copy the returned transfer URL
+and open it.
 
-**Qué debe pasar:** la página del transfer muestra los dos ficheros — el que ya existía
-en Brault y el que subiste como binario — y ambos se pueden descargar desde ahí.
+**What should happen:** the transfer page shows both files — the one that already
+existed in Brault and the one you uploaded as a binary — and both can be downloaded
+from there.
 
-## 10. File → Upload eligiendo Library Y Folder desde los desplegables
+## 10. File → Upload picking Library AND Folder from the dropdowns
 
-**Qué hacer:** en un nodo `Brault`, recurso **File**, operación **Upload**, abre
-**Additional Fields** y elige tanto **Library** como **Folder** usando el selector
-"From list" (el desplegable, no "By ID" a mano). Ejecuta el nodo con un campo binario
-válido.
+**What to do:** in a `Brault` node, resource **File**, operation **Upload**, open
+**Additional Fields** and pick both **Library** and **Folder** using the "From list"
+selector (the dropdown, not "By ID" by hand). Run the node with a valid binary field.
 
-**Qué debe pasar:** el nodo termina sin error 400 y el fichero aparece en la carpeta
-exacta que elegiste en el desplegable, no en la raíz de la library ni en otra carpeta.
+**What should happen:** the node finishes without a 400 error and the file appears in
+the exact folder you picked from the dropdown, not in the library root or in another
+folder.
 
-## 11. File → Download a un campo binario
+## 11. File → Download to a binary field
 
-**Qué hacer:** en un nodo `Brault`, recurso **File**, operación **Download**, con el
-`fileId` de un fichero existente. Deja **Output Binary Field** en `data`.
+**What to do:** in a `Brault` node, resource **File**, operation **Download**, with
+the `fileId` of an existing file. Leave **Output Binary Field** as `data`.
 
-**Qué debe pasar:** el item de salida trae un campo binario `data` con el contenido del
-fichero; ábrelo con un nodo **Read/Write Files from Disk** o descárgalo desde el panel de
-n8n y confirma que el fichero abre correctamente.
+**What should happen:** the output item carries a `data` binary field with the file's
+content; open it with a **Read/Write Files from Disk** node or download it from the
+n8n panel and confirm the file opens correctly.
 
 ## 12. Board → Query
 
-**Qué hacer:** en un nodo `Brault`, recurso **Board**, operación **Query**, sobre un
-board existente con al menos un fichero.
+**What to do:** in a `Brault` node, resource **Board**, operation **Query**, on an
+existing board with at least one file.
 
-**Qué debe pasar:** el nodo devuelve los ficheros del board que cumplen el filtro (o
-todos, si no pusiste filtro), sin error.
+**What should happen:** the node returns the board's files that match the filter (or
+all of them, if you did not set a filter), without error.

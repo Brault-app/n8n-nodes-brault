@@ -7,6 +7,13 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+## [0.1.4] - 2026-09-11
+
+### Changed
+
+- Icons: a single official Brault mark (`logo_icon.svg`, verbatim) for every theme, as the n8n docs recommend when one file works on light and dark backgrounds.
+- Documentation: the manual smoke checklist is now in English (n8n verification requires English-only documentation).
+
 ## [0.1.3] - 2026-09-11
 
 ### Fixed

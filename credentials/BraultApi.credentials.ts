@@ -3,7 +3,7 @@ import type { IAuthenticateGeneric, ICredentialTestRequest, ICredentialType, INo
 export class BraultApi implements ICredentialType {
 	name = 'braultApi';
 	displayName = 'Brault API';
-	icon = { light: 'file:brault.svg', dark: 'file:brault.dark.svg' } as const;
+	icon = 'file:brault.svg' as const;
 	documentationUrl = 'https://developers.brault.app/docs/get-an-api-key';
 	properties: INodeProperties[] = [
 		{
