@@ -109,9 +109,22 @@ headers, returnFullResponse })`.
   "code · request_id"`. Specific codes get friendlier text:
   `webhook_limit_reached` ("Your plan allows N webhook endpoints; remove one in Settings →
   Developers or upgrade"), `insufficient_scope` (names the missing scope),
-  `misdirected_request` (points at `details.host`). `429` honours `Retry-After` with a single
+  `misdirected_request` (points at `details.host`). A `validation_error` appends every
+  `details.errors[].reason` string to the message. `429` honours `Retry-After` with a single
   in-node retry when it is ≤ 10 s; otherwise the error surfaces with the header value in
   the description.
+- **Destinations.** The API takes exactly one destination per request body (`library_id`,
+  `folder_id`, `to_root` — `endpoints-v1.md` § 2.9); two of them answer `400
+  validation_error`. n8n users routinely fill in both, so `normalizeDestination` (in
+  `catalogue/plan-request.ts`, applied by `planRequest` and by the upload handler, bodies
+  only, never `qs`) drops `library_id` when a `folder_id` is set, drops both when
+  `to_root` is true, and drops `to_root` when it is false. List filters keep taking a
+  library and a folder together, because those travel in the query string.
+- **Deletes.** `DELETE …?permanent=true` only works on an item already in the trash; on a
+  live item the API answers `400 invalid_request`. `actions/delete-with-trash.ts` is the
+  shared handler for file, folder and page deletes: on a permanent delete it sends the
+  plain `DELETE` first (through `braultRequestRaw`, ignoring its status so an
+  already-trashed item still works) and then repeats it with `permanent=true`.
 - **Pagination.** `getAll(this, plane, path, qs, { returnAll, limit })` follows
   `next_cursor` with page size `min(100, remaining)` until `has_more` is false or `limit`
   is reached. Every Get Many operation exposes `Return All` (boolean, default false) and

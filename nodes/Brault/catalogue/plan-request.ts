@@ -48,6 +48,24 @@ export function coerce(param: ParamSpec, raw: unknown): unknown {
 	return raw;
 }
 
+/**
+ * Exactly one destination per request: `POST /v1/uploads`, `/v1/files/import`, `/v1/folders`
+ * and the move/copy routes refuse a body that names two of `library_id`, `folder_id`, `to_root`
+ * with `400 validation_error` (endpoints-v1.md § 2.9). n8n users routinely fill in a library
+ * *and* a folder, so collapse the pair here: the folder already implies its library. Bodies
+ * only: list filters legitimately take a library and a folder together in the query string.
+ */
+export function normalizeDestination(body: IDataObject): IDataObject {
+	if (body.to_root === true) {
+		delete body.library_id;
+		delete body.folder_id;
+		return body;
+	}
+	if (body.folder_id !== undefined) delete body.library_id;
+	if (body.to_root === false) delete body.to_root;
+	return body;
+}
+
 export function planRequest(spec: OperationSpec, values: Record<string, unknown>): RequestPlan {
 	const all: ParamSpec[] = [...(spec.params ?? []), ...(spec.fields ?? [])];
 	const qs: IDataObject = {};
@@ -63,5 +81,5 @@ export function planRequest(spec: OperationSpec, values: Record<string, unknown>
 		if (v === undefined) continue;
 		(p.in === 'query' ? qs : body)[p.name] = v as IDataObject[string];
 	}
-	return { plane: spec.plane, method: spec.method, path, qs, body };
+	return { plane: spec.plane, method: spec.method, path, qs, body: normalizeDestination(body) };
 }

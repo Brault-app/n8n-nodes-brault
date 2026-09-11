@@ -49,6 +49,16 @@ describe('uploadFile', () => {
 
 	it('coerces resource-locator fields from Additional Fields into plain IDs in the upload body', async () => {
 		req.mockResolvedValueOnce({ id: 'up_1', method: 'put', upload_url: 'https://s3/put' });
+		const ctx = makeCtx({ library_id: { __rl: true, mode: 'list', value: 'lib_1' } });
+
+		await uploadFile(ctx, 0, uploadSpec);
+
+		expect(req.mock.calls[0][1]).toMatchObject({ method: 'POST', path: '/v1/uploads' });
+		expect(req.mock.calls[0][1].body).toEqual({ name: 'a.png', size: 3, library_id: 'lib_1' });
+	});
+
+	it('sends only the folder when both a library and a folder are filled in', async () => {
+		req.mockResolvedValueOnce({ id: 'up_1', method: 'put', upload_url: 'https://s3/put' });
 		const ctx = makeCtx({
 			library_id: { __rl: true, mode: 'list', value: 'lib_1' },
 			folder_id: { __rl: true, mode: 'id', value: 'fld_1' },
@@ -56,12 +66,7 @@ describe('uploadFile', () => {
 
 		await uploadFile(ctx, 0, uploadSpec);
 
-		expect(req.mock.calls[0][1]).toMatchObject({
-			method: 'POST',
-			path: '/v1/uploads',
-			body: { name: 'a.png', size: 3, library_id: 'lib_1', folder_id: 'fld_1' },
-		});
-		expect(req.mock.calls[0][1].body).toEqual({ name: 'a.png', size: 3, library_id: 'lib_1', folder_id: 'fld_1' });
+		expect(req.mock.calls[0][1].body).toEqual({ name: 'a.png', size: 3, folder_id: 'fld_1' });
 	});
 
 	it('omits an added-but-blank locator instead of sending an empty string', async () => {

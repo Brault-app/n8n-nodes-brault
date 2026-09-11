@@ -10,18 +10,33 @@ export interface BraultApiErrorInfo {
 	details?: IDataObject;
 }
 
+/**
+ * The v1 error envelope is flat (`{ object: 'error', status, code, message, request_id, details }`).
+ * A `body.error` wrapper is only read as a fallback, for older responses and proxies.
+ */
 export function parseErrorBody(body: unknown, status: number): BraultApiErrorInfo {
-	const err = (body as { error?: IDataObject } | undefined)?.error;
-	if (err && typeof err === 'object' && typeof err.code === 'string') {
+	const flat = body && typeof body === 'object' ? (body as IDataObject) : undefined;
+	const candidate =
+		flat && (flat.object === 'error' || typeof flat.code === 'string') ? flat : (flat?.error as IDataObject | undefined);
+	if (candidate && typeof candidate === 'object' && typeof candidate.code === 'string') {
 		return {
-			code: err.code,
-			message: String(err.message ?? err.code),
+			code: candidate.code,
+			message: String(candidate.message ?? candidate.code),
 			status,
-			requestId: typeof err.request_id === 'string' ? err.request_id : undefined,
-			details: (err.details as IDataObject) ?? undefined,
+			requestId: typeof candidate.request_id === 'string' ? candidate.request_id : undefined,
+			details: (candidate.details as IDataObject) ?? undefined,
 		};
 	}
 	return { code: `http_${status}`, message: `Brault answered HTTP ${status}`, status };
+}
+
+/** `validation_error` carries one `{ field, reason }` entry per broken rule in `details.errors`. */
+function detailReasons(details: IDataObject): string[] {
+	const errors = details.errors;
+	if (!Array.isArray(errors)) return [];
+	return errors
+		.map((e) => (e && typeof e === 'object' ? (e as IDataObject).reason : undefined))
+		.filter((r): r is string => typeof r === 'string' && r.trim() !== '');
 }
 
 export function friendlyMessage(info: BraultApiErrorInfo): string {
@@ -47,7 +62,8 @@ export function friendlyMessage(info: BraultApiErrorInfo): string {
 		return `Rate limited by Brault (${info.message}). Reduce the workflow's request rate or upgrade the plan.`;
 	}
 
-	return info.message;
+	const reasons = detailReasons(details);
+	return reasons.length > 0 ? [info.message, ...reasons].join(' ') : info.message;
 }
 
 export function toNodeApiError(node: INode, res: BraultResponse): NodeApiError {

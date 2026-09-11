@@ -1,5 +1,6 @@
 import { bodyParam, folderLocator, libraryLocator, pathLocator, queryParam } from '../catalogue/common-params';
 import type { ResourceSpec } from '../catalogue/types';
+import { deleteWithTrash } from './delete-with-trash';
 
 export const folder: ResourceSpec = {
 	value: 'folder',
@@ -45,7 +46,14 @@ export const folder: ResourceSpec = {
 			plane: 'regional',
 			path: '/v1/folders',
 			params: [bodyParam('name', 'Name', 'string', { required: true, placeholder: 'e.g. Campaign assets' })],
-			fields: [libraryLocator(), { ...folderLocator(), displayName: 'Parent Folder' }],
+			fields: [
+				{ ...libraryLocator(), description: 'Library that holds the item; Folder wins over Library when both are set' },
+				{
+					...folderLocator(),
+					displayName: 'Parent Folder',
+					description: 'Folder to create the new folder in; Folder wins over Library when both are set',
+				},
+			],
 		},
 		{
 			resource: 'folder',
@@ -72,7 +80,14 @@ export const folder: ResourceSpec = {
 			plane: 'regional',
 			path: '/v1/folders/{folderId}/move',
 			params: [pathLocator('folderId', 'Folder', 'folder')],
-			fields: [libraryLocator(), { ...folderLocator(), displayName: 'Destination Folder' }],
+			fields: [
+				{ ...libraryLocator(), description: 'Library that holds the item; Folder wins over Library when both are set' },
+				{
+					...folderLocator(),
+					displayName: 'Destination Folder',
+					description: 'Folder to move the folder into; Folder wins over Library when both are set',
+				},
+			],
 		},
 		{
 			resource: 'folder',
@@ -89,6 +104,7 @@ export const folder: ResourceSpec = {
 					description: 'Whether to delete permanently instead of moving to trash',
 				}),
 			],
+			custom: deleteWithTrash,
 		},
 		{
 			resource: 'folder',

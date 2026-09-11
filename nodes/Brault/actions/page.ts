@@ -5,6 +5,7 @@
  */
 import { bodyParam, folderLocator, libraryLocator, pathLocator, queryParam } from '../catalogue/common-params';
 import type { ResourceSpec } from '../catalogue/types';
+import { deleteWithTrash } from './delete-with-trash';
 
 const pageIdParam = pathLocator('pageId', 'Page', 'page');
 
@@ -82,6 +83,7 @@ export const page: ResourceSpec = {
 			path: '/v1/pages/{pageId}',
 			params: [pageIdParam],
 			fields: [queryParam('permanent', 'Permanent', 'boolean', { description: 'Whether to delete permanently instead of moving to trash' })],
+			custom: deleteWithTrash,
 		},
 		{
 			resource: 'page',

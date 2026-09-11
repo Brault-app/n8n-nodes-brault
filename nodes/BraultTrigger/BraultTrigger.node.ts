@@ -81,7 +81,9 @@ export class BraultTrigger implements INodeType {
 				const sd = this.getWorkflowStaticData('node') as TriggerStaticData;
 				if (!sd.webhookId) return false;
 				const res = await braultRequestRaw(this, { plane: 'regional', method: 'GET', path: `/v1/webhooks/${sd.webhookId}` });
-				const url = (res.body as { data?: { url?: string } } | undefined)?.data?.url;
+				// GET /v1/webhooks/{id} answers a flat object; `data.url` is only a legacy fallback.
+				const body = res.body as { url?: string; data?: { url?: string } } | undefined;
+				const url = body?.url ?? body?.data?.url;
 				if (res.statusCode === 200 && url === this.getNodeWebhookUrl('default')) return true;
 				delete sd.webhookId;
 				delete sd.secret;

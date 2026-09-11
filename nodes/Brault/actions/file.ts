@@ -6,6 +6,7 @@
 /* eslint-disable n8n-nodes-base/node-param-default-missing */
 import { bodyParam, folderLocator, libraryLocator, pathLocator, queryParam } from '../catalogue/common-params';
 import type { ResourceSpec } from '../catalogue/types';
+import { deleteWithTrash } from './delete-with-trash';
 import { downloadFile, uploadFile } from './file-binary';
 import { importFromUrl } from './file-import-wait';
 import { setFilePropertyValue, valueParams } from './property-value';
@@ -113,7 +114,13 @@ export const file: ResourceSpec = {
 			plane: 'regional',
 			path: '/v1/files/{fileId}/move',
 			params: [pathLocator('fileId', 'File', 'file')],
-			fields: [libraryLocator(), folderLocator(), bodyParam('to_root', 'To Root', 'boolean', { description: 'Whether to move/copy to the brandspace root instead of a folder' })],
+			fields: [
+				{ ...libraryLocator(), description: 'Library that holds the item; Folder wins over Library when both are set' },
+				{ ...folderLocator(), description: 'Folder inside the library; Folder wins over Library when both are set' },
+				bodyParam('to_root', 'To Root', 'boolean', {
+					description: 'Whether to move/copy to the brandspace root instead of a folder',
+				}),
+			],
 		},
 		{
 			resource: 'file',
@@ -125,7 +132,13 @@ export const file: ResourceSpec = {
 			plane: 'regional',
 			path: '/v1/files/{fileId}/copy',
 			params: [pathLocator('fileId', 'File', 'file')],
-			fields: [libraryLocator(), folderLocator(), bodyParam('to_root', 'To Root', 'boolean', { description: 'Whether to move/copy to the brandspace root instead of a folder' })],
+			fields: [
+				{ ...libraryLocator(), description: 'Library that holds the item; Folder wins over Library when both are set' },
+				{ ...folderLocator(), description: 'Folder inside the library; Folder wins over Library when both are set' },
+				bodyParam('to_root', 'To Root', 'boolean', {
+					description: 'Whether to move/copy to the brandspace root instead of a folder',
+				}),
+			],
 		},
 		{
 			resource: 'file',
@@ -138,6 +151,7 @@ export const file: ResourceSpec = {
 			path: '/v1/files/{fileId}',
 			params: [pathLocator('fileId', 'File', 'file')],
 			fields: [queryParam('permanent', 'Permanent', 'boolean', { description: 'Whether to delete permanently instead of moving to trash' })],
+			custom: deleteWithTrash,
 		},
 		{
 			resource: 'file',
@@ -253,8 +267,8 @@ export const file: ResourceSpec = {
 			params: [bodyParam('url', 'URL', 'string', { required: true, placeholder: 'e.g. https://example.com/hero.psd' })],
 			fields: [
 				bodyParam('name', 'Name', 'string', { description: 'Name for the imported file; defaults to the source filename' }),
-				libraryLocator(),
-				folderLocator(),
+				{ ...libraryLocator(), description: 'Library that holds the item; Folder wins over Library when both are set' },
+				{ ...folderLocator(), description: 'Folder to import the file into; Folder wins over Library when both are set' },
 				{
 					displayName: 'Wait For Completion',
 					name: 'wait',
@@ -288,8 +302,8 @@ export const file: ResourceSpec = {
 			],
 			fields: [
 				bodyParam('name', 'File Name', 'string', { description: 'Name for the file; defaults to the binary file name' }),
-				libraryLocator(),
-				folderLocator(),
+				{ ...libraryLocator(), description: 'Library that holds the item; Folder wins over Library when both are set' },
+				{ ...folderLocator(), description: 'Folder to upload the file into; Folder wins over Library when both are set' },
 				bodyParam('file_id', 'Existing File ID', 'string', { description: 'Upload as a new version of this file' }),
 			],
 			custom: uploadFile,

@@ -1,5 +1,5 @@
 import type { IDataObject, IExecuteFunctions, INodeExecutionData } from 'n8n-workflow';
-import { coerce } from '../catalogue/plan-request';
+import { coerce, normalizeDestination } from '../catalogue/plan-request';
 import type { OperationSpec } from '../catalogue/types';
 import { braultRequest } from '../transport/request';
 import { downloadToBinary, readBinarySource, uploadWithSession, type UploadSession } from '../transport/binary';
@@ -15,6 +15,8 @@ export async function uploadFile(ctx: IExecuteFunctions, i: number, spec: Operat
 	const body: IDataObject = { name: String(v.name || fileName), size };
 	for (const k of ['library_id', 'folder_id', 'file_id'])
 		if (v[k] !== undefined) body[k] = v[k] as IDataObject[string];
+	// This body never goes through planRequest, so apply the one-destination rule here.
+	normalizeDestination(body);
 	const session = await braultRequest<UploadSession>(ctx, { plane: 'regional', method: 'POST', path: '/v1/uploads', body, idempotent: true });
 	const file = await uploadWithSession(
 		ctx,

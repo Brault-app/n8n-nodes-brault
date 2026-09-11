@@ -28,8 +28,9 @@ export async function resolveHosts(ctx: TransportContext): Promise<BraultHosts> 
 	try {
 		const res = (await ctx.helpers.httpRequestWithAuthentication.call(ctx, 'braultApi', {
 			method: 'GET', url: `${baseUrl}/v1/me`, json: true, returnFullResponse: true, ignoreHttpStatusErrors: true,
-		})) as { statusCode: number; body?: { data?: { hosts?: Partial<BraultHosts> } } };
-		const h = res.statusCode === 200 ? res.body?.data?.hosts : undefined;
+		})) as { statusCode: number; body?: { hosts?: Partial<BraultHosts>; data?: { hosts?: Partial<BraultHosts> } } };
+		// GET /v1/me answers a flat object (`{ object: 'me', …, hosts }`); `data.hosts` is only a legacy fallback.
+		const h = res.statusCode === 200 ? (res.body?.hosts ?? res.body?.data?.hosts) : undefined;
 		if (h?.central && h?.regional) hosts = { central: h.central, regional: h.regional };
 	} catch {
 		// keep the fallback: one origin serves both planes today (conventions.md § Host and versioning)

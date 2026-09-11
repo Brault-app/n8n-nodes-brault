@@ -373,8 +373,10 @@ async function main() {
 		{ method: 'GET', url: `${BASE_URL}/v1/me`, json: true, returnFullResponse: true, ignoreHttpStatusErrors: true },
 		true,
 	);
-	if (me.statusCode === 200 && me.body?.data?.hosts?.central && me.body?.data?.hosts?.regional) {
-		hosts = me.body.data.hosts;
+	// /v1/me answers a flat object: { object: 'me', brandspace, key, plan, limits, hosts }.
+	const meHosts = me.body?.hosts ?? me.body?.data?.hosts;
+	if (me.statusCode === 200 && meHosts?.central && meHosts?.regional) {
+		hosts = meHosts;
 	}
 	console.log(`# hosts: central=${hosts.central} regional=${hosts.regional}`);
 
@@ -430,13 +432,14 @@ async function main() {
 
 	// 4 — upload
 	await check('4a POST /v1/uploads probe (session shape)', async () => {
+		// Raw API call: the route takes exactly one of library_id, folder_id, file_id.
+		const destination = state.folderId
+			? { folder_id: state.folderId }
+			: state.libraryId
+				? { library_id: state.libraryId }
+				: {};
 		const res = await api('POST', '/v1/uploads', {
-			body: {
-				name: 'smoke-probe.png',
-				size: PNG.length,
-				...(state.libraryId ? { library_id: state.libraryId } : {}),
-				...(state.folderId ? { folder_id: state.folderId } : {}),
-			},
+			body: { name: 'smoke-probe.png', size: PNG.length, ...destination },
 		});
 		if (res.statusCode < 200 || res.statusCode >= 300)
 			throw new Error(`HTTP ${res.statusCode}: ${JSON.stringify(res.body).slice(0, 300)}`);
@@ -453,7 +456,9 @@ async function main() {
 			state.uploadProbe.hasContentType ? JSON.stringify(session.content_type) : 'ABSENT'
 		}`;
 	});
-	await check('4b file.upload (24x24 PNG)', async () => {
+	// The ONE check that deliberately fills in both destinations: the node must collapse them
+	// to folder_id alone (normalizeDestination), because the API refuses a body naming two.
+	await check('4b file.upload (24x24 PNG, library + folder both set on purpose)', async () => {
 		const f = one(
 			await run(
 				'file',
@@ -528,8 +533,8 @@ async function main() {
 			additionalFields: {
 				wait: true,
 				name: `smoke-import-${stamp}.ico`,
-				...(state.libraryId ? { library_id: rl(state.libraryId) } : {}),
-				...(state.folderId ? { folder_id: rl(state.folderId) } : {}),
+				// exactly one destination: the folder already implies its library
+				...(state.folderId ? { folder_id: rl(state.folderId) } : state.libraryId ? { library_id: rl(state.libraryId) } : {}),
 			},
 		};
 		const opPromise = run('file', 'importFromUrl', params);
@@ -858,16 +863,18 @@ async function main() {
 		return `deleted ${id}: ${JSON.stringify(d).slice(0, 100)}`;
 	});
 
-	// Best-effort sweep of anything a failed check left behind.
-	for (const [label, path] of [
-		['board', state.boardId && `/v1/boards/${state.boardId}`],
-		['shared link', state.sharedLinkId && `/v1/shared-links/${state.sharedLinkId}`],
-		['page', state.pageId && `/v1/pages/${state.pageId}?permanent=true`],
-		['transfer', state.transferId && `/v1/transfers/${state.transferId}`],
-		['webhook', state.webhookId && `/v1/webhooks/${state.webhookId}`],
+	// Best-effort sweep of anything a failed check left behind. A permanent delete only works
+	// on an item that is already in the trash, so trash it first and then repeat the call.
+	for (const [label, path, permanent] of [
+		['board', state.boardId && `/v1/boards/${state.boardId}`, false],
+		['shared link', state.sharedLinkId && `/v1/shared-links/${state.sharedLinkId}`, false],
+		['page', state.pageId && `/v1/pages/${state.pageId}`, true],
+		['transfer', state.transferId && `/v1/transfers/${state.transferId}`, false],
+		['webhook', state.webhookId && `/v1/webhooks/${state.webhookId}`, false],
 	]) {
 		if (!path) continue;
-		const res = await api('DELETE', path).catch((e) => ({ statusCode: 0, body: String(e) }));
+		let res = await api('DELETE', path).catch((e) => ({ statusCode: 0, body: String(e) }));
+		if (permanent) res = await api('DELETE', `${path}?permanent=true`).catch((e) => ({ statusCode: 0, body: String(e) }));
 		const ok = res.statusCode >= 200 && res.statusCode < 300;
 		console.log(`# sweep ${label}: HTTP ${res.statusCode}${ok ? '' : ' (left behind)'}`);
 		if (!ok) state.leftBehind.push(`${label} ${path}`);
