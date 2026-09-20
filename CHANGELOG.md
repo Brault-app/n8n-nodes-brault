@@ -7,6 +7,12 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Unreleased
 
+## [0.1.6] - 2026-09-20
+
+### Fixed
+
+- Codex files: the `Marketing` category is not a recognised n8n category and was silently ignored by the n8n UI; both nodes now use `Marketing & Content`, as requested by the n8n verification review.
+
 ## [0.1.5] - 2026-09-11
 
 ### Fixed
