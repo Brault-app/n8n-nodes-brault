@@ -85,7 +85,7 @@ removal and the "Listen for test event" flow for you.
 - **One endpoint per workflow.** Each active workflow gets its own endpoint, named
   `n8n · <workflow name>` in Brault's Settings → Developers → Webhooks. Deactivating the
   workflow deletes that endpoint.
-- **Plan limits** on webhook endpoints: Lite 1, Pro 5, Growth 25, Custom 25 (each
+- **Plan limits** on webhook endpoints: Pro 5, Growth 25, Custom 25 (each
   workflow needs its own endpoint, so this caps how many `Brault Trigger` workflows can
   be active at once). See [Plans and limits](https://developers.brault.app/docs/plans-and-limits).
   Webhook deliveries do not count against your monthly request quota; calls the `Brault`
